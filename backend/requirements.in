@@ -1,0 +1,20 @@
+# Web Framework & Async I/O
+fastapi
+uvicorn[standard]
+
+# Database & ORM
+sqlalchemy
+asyncpg
+alembic
+
+# Data Processing & ML
+polars
+scikit-learn
+
+# External Data & LLM
+yfinance
+google-generativeai
+
+# Utilities
+python-dotenv
+httpx
