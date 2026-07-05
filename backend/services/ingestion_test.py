@@ -1,90 +1,57 @@
 import asyncio
-import yfinance as yf
 import polars as pl
-from typing import List, Optional
+from datetime import datetime, timezone
 import sys
 
-sys.path.append("backend")  # Adiciona o diretório backend ao sys.path para importações relativas
+sys.path.append("../")  # Adiciona o diretório pai ao sys.path para importar core.logger
 from core.logger import logger
-
-async def fetch_ticker_data_async(ticker: str, start_date: str, end_date: str) -> Optional[pl.DataFrame]:
-    """
-    Faz o fetch dos dados de um único ticker de forma não bloqueante
-    e converte a saída para um DataFrame vetorizado do Polars.
-    """
-    try:
-        # Offload da chamada bloqueante do yfinance para uma thread separada
-        df_pandas = await asyncio.to_thread(
-            yf.download,
-            tickers=ticker,
-            start=start_date,
-            end=end_date,
-            progress=False
-        )
-
-        if df_pandas is None:
-            logger.warning(f"Nenhum dado retornado para {ticker}")
-            return None
-
-        # O yfinance moderno retorna um MultiIndex nas colunas quando o download falha parcialmente
-        # ou muda dependendo da versão. Vamos achatar as colunas e resetar o índice da Data.
-        df_pandas = df_pandas.reset_index()
-        
-        # Se for MultiIndex (versões mais novas do yf), pegamos apenas o nível superior
-        if isinstance(df_pandas.columns, tuple) or hasattr(df_pandas.columns, 'levels'):
-             df_pandas.columns = [col[0].lower() if isinstance(col, tuple) else col.lower() for col in df_pandas.columns]
-        else:
-             df_pandas.columns = [col.lower() for col in df_pandas.columns]
-
-        # Conversão zero-copy (quando possível) de Pandas para Polars
-        df_polars = pl.from_pandas(df_pandas)
-
-        # Adiciona a coluna do Ticker para normalização no banco de dados (Long Format)
-        # O Polars usa expressões (pl.lit) que são altamente otimizadas
-        df_polars = df_polars.with_columns(pl.lit(ticker).alias("ticker"))
-
-        return df_polars
-
-    except Exception as e:
-        logger.error(f"Falha ao processar {ticker}: {e}")
-        return None
+from services.fetch_yahoo import fetch_yahoo_json_async
 
 async def main():
-    # .SA é o sufixo obrigatório no Yahoo Finance para ações da B3
     tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA"]
-    start_date = "2025-01-01"
-    end_date = "2026-01-01"
-
-    logger.info(f"Iniciando ingestão concorrente para {len(tickers)} ativos...")
-
-    # Criamos uma lista de corrotinas
-    tasks = [fetch_ticker_data_async(t, start_date, end_date) for t in tickers]
     
-    # Executamos todas as requisições de rede paralelamente! 
-    # O tempo total será praticamente o tempo da requisição mais lenta, e não a soma de todas.
+    # Conversão de datas para Unix Timestamp (exigência da API do Yahoo)
+    start_dt = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    end_dt =datetime.now(tz=timezone.utc)
+    
+    start_ts = int(start_dt.timestamp())
+    end_ts = int(end_dt.timestamp())
+
+    logger.info(f"Buscando JSON direto para {len(tickers)} ativos via httpx...")
+
+    # Dispara as corrotinas assíncronas do httpx
+    tasks = [fetch_yahoo_json_async(t, start_ts, end_ts) for t in tickers]
     results = await asyncio.gather(*tasks)
 
-    # Filtramos possíveis falhas (Nones) e concatenamos verticalmente (UNION ALL no SQL)
-    valid_dfs = [df for df in results if df is not None]
-    
-    if valid_dfs:
-        master_df = pl.concat(valid_dfs)
+    # Achatando a lista de listas em uma única lista de dicionários nativos
+    all_records = []
+    for record_list in results:
+        if record_list:
+            all_records.extend(record_list)
+
+    if all_records:
+        logger.info(f"Ingestão via JSON concluída. {len(all_records)} registros encontrados.")
+        logger.info("Criando DataFrame Polars a partir de Python nativo (Safe)...")
         
-        logger.info("\n=== Amostra dos Dados Ingeridos ===")
-        logger.info(master_df.head())
-        logger.info(f"\nTotal de registros extraídos: {master_df.height} linhas.")
+        # O Polars é extremamente rápido e seguro lendo uma lista de dicionários Python puros.
+        # Zero pandas, zero C++ extensions no meio do caminho.
+        master_df = pl.DataFrame(all_records)
         
-        # Exemplo rápido da velocidade do Polars: 
-        # Agrupar por ticker e calcular o preço médio de fechamento (close)
-        summary = master_df.group_by("ticker").agg(
-            pl.col("close").mean().alias("preco_medio_periodo")
-        )
-        logger.info("\n=== Preço Médio por Ativo ===")
-        logger.info(summary)
+        # Garante a tipagem explícita para o banco de dados depois
+        master_df = master_df.cast({
+            "ticker": pl.Utf8,
+            "open": pl.Float32,
+            "high": pl.Float32,
+            "low": pl.Float32,
+            "close": pl.Float32,
+            "volume": pl.Int64
+        })
+
+        logger.info("\n=== Amostra dos Dados (API Direta) ===")
+        logger.info(f"\n{master_df.head()}")
         
     else:
-        logger.warning("Nenhum dado pôde ser ingerido.")
+        logger.warning("Nenhum dado pôde ser ingerido da API direta.")
 
 if __name__ == "__main__":
-    # Ponto de entrada do Event Loop
     asyncio.run(main())
