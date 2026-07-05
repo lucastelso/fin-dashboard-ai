@@ -42,7 +42,6 @@ Foco: Deploy e DevOps.Empacotamento do backend, frontend e banco de dados em um 
 
 ## Estrutura geral do repositorio
 
-
 ```plaintext
 fin-dashboard-project/
 ├── backend/
@@ -68,3 +67,35 @@ fin-dashboard-project/
 │   └── Dockerfile
 └── docker-compose.yml    # Orquestra Postgres, Backend e Frontend
 ```
+
+
+### Passo 1 - Levantamento de requisitos e ambiente
+
+Para implementar o prjeot, é necessário termos biblioteca web i/o e async, de machine learning, banco de dados, sql, api do yahoo finance e a api do gemini. 
+
+
+```.txt
+# Web Framework & Async I/O
+fastapi
+uvicorn[standard]
+
+# Database & ORM
+sqlalchemy
+asyncpg
+alembic
+
+# Data Processing & ML
+polars
+scikit-learn
+
+# External Data & LLM
+yfinance
+google-generativeai
+
+# Utilities
+python-dotenv
+httpx
+```
+
+### Passo 2 - Qunado
+
