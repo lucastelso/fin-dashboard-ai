@@ -11,7 +11,7 @@ async def main():
     tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA"]
     
     # Conversão de datas para Unix Timestamp (exigência da API do Yahoo)
-    start_dt = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    start_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
     end_dt =datetime.now(tz=timezone.utc)
     
     start_ts = int(start_dt.timestamp())
@@ -40,22 +40,23 @@ async def main():
         # Garante a tipagem explícita para o banco de dados depois
         master_df = master_df.cast({
             "ticker": pl.Utf8,
-            "open": pl.Float32,
-            "high": pl.Float32,
-            "low": pl.Float32,
-            "close": pl.Float32,
+            "open": pl.Decimal(6, 2),
+            "high": pl.Decimal(6, 2),
+            "low": pl.Decimal(6, 2),
+            "close": pl.Decimal(6, 2),
             "volume": pl.Int64
             })
 
         
         logger.info("\n\n=============== Amostra dos Dados (API Direta) ================")
-        print(master_df.select([
-            pl.col("ticker").alias("ativo"),
-            pl.col("date").alias("data"),
-            pl.col("open").alias("abertura").round(2),
-            pl.col("close").alias("fechamento").round(2),
-            pl.col("volume")
-        ]).sort("data"))
+        print(
+            master_df.select([
+                pl.col("ticker").alias("ativo"),
+                pl.col("date").alias("data").dt.strftime("%Y-%m-%d"),
+                pl.col("open").alias("abertura").round(2),
+                pl.col("close").alias("fechamento").round(2),
+                pl.col("volume")
+                ]).sort("data"))
 
         
     else:

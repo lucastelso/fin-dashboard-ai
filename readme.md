@@ -73,6 +73,7 @@ fin-dashboard-project/
 
 Para implementar o prjeot, é necessário termos biblioteca web i/o e async, de machine learning, banco de dados, sql, api do yahoo finance e a api do gemini. 
 
+Nós vamos coletar os dados da API do yahoo, mas não vamos utilizar yfinance, pois ele retorna uma série do pandas. Vamos evitar o pandas pois ele é single thread e bem mais lento e pesado do que o polars.
 
 ```.txt
 # Web Framework & Async I/O
@@ -89,7 +90,6 @@ polars
 scikit-learn
 
 # External Data & LLM
-yfinance
 google-generativeai
 
 # Utilities
@@ -97,5 +97,5 @@ python-dotenv
 httpx
 ```
 
-### Passo 2 - Qunado
 
+### Passo 2 - 
