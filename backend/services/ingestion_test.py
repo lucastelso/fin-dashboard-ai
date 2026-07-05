@@ -2,6 +2,9 @@ import asyncio
 import yfinance as yf
 import polars as pl
 from typing import List, Optional
+import sys
+
+sys.path.append("backend")  # Adiciona o diretório backend ao sys.path para importações relativas
 from core.logger import logger
 
 async def fetch_ticker_data_async(ticker: str, start_date: str, end_date: str) -> Optional[pl.DataFrame]:
