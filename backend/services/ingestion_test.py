@@ -76,11 +76,11 @@ async def main():
         summary = master_df.group_by("ticker").agg(
             pl.col("close").mean().alias("preco_medio_periodo")
         )
-        print("\n=== Preço Médio por Ativo ===")
-        print(summary)
+        logger.info("\n=== Preço Médio por Ativo ===")
+        logger.info(summary)
         
     else:
-        print("Nenhum dado pôde ser ingerido.")
+        logger.warning("Nenhum dado pôde ser ingerido.")
 
 if __name__ == "__main__":
     # Ponto de entrada do Event Loop
