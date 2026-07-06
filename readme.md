@@ -99,3 +99,16 @@ httpx
 
 
 ### Passo 2 - 
+
+
+```
+backend/
+├── core/
+│   └── database.py       # Gerenciamento da conexão e engine assíncrona
+├── models/
+│   └── market.py         # O mapeamento Declarativo (Tabelas)
+└── services/
+    ├── fetch_yahoo.py    # (Seu arquivo já existente)
+    └── db_repository.py  # Funções de interação com o banco (Upsert)
+
+```

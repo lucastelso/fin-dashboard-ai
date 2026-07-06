@@ -35,15 +35,12 @@ async def main():
         
         # O Polars é extremamente rápido e seguro lendo uma lista de dicionários Python puros.
         # Zero pandas, zero C++ extensions no meio do caminho.
-        master_df = pl.DataFrame(all_records)
-        
-        # Garante a tipagem explícita para o banco de dados depois
-        master_df = master_df.cast({
+        master_df = pl.DataFrame(all_records).cast({
             "ticker": pl.Utf8,
-            "open": pl.Decimal(6, 2),
-            "high": pl.Decimal(6, 2),
-            "low": pl.Decimal(6, 2),
-            "close": pl.Decimal(6, 2),
+            "open": pl.Decimal(10, 2),
+            "high": pl.Decimal(10, 2),
+            "low": pl.Decimal(10, 2),
+            "close": pl.Decimal(10, 2),
             "volume": pl.Int64
             })
 
