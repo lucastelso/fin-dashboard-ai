@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import MetaData, String, Integer, Text, DateTime, func, ForeignKey, Index, UniqueConstraint
+from polars import Decimal
+from sqlalchemy import MetaData, String, Integer, Text, DateTime, func, ForeignKey, Index, UniqueConstraint, Numeric 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 POSTGRES_NAMING_CONVENTION = {
@@ -38,3 +39,26 @@ class SeriesAtivos(Base):
     via dim_ativos."""
     __tablename__ = "series_ativos"
     
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # A Chave Estrangeira aponta para o ID Inteiro da Dimensão
+    id_dim_ativo: Mapped[int] = mapped_column(
+        Integer, 
+        ForeignKey("dim_ativos.id_dim_ativo", ondelete="CASCADE"), 
+        nullable=False
+    )
+    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    open: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    close: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    volume: Mapped[int] = mapped_column(Integer, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    # Relacionamento no ORM
+    dimension: Mapped[DimensaoAtivos] = relationship(
+        "DimensaoAtivos", back_populates="extractions"
+    )
+
+    __table_args__ = (
+        # Índice crucial na FK para acelerar JOINS de volumetria pesada
+        Index('ix_series_ativos_id_dim_ativo', 'id_dim_ativo'),
+    )
