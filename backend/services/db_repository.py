@@ -76,7 +76,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
             "atualizado_em": func.now()  # Garante que saibamos quando o dado foi corrigido
         }
 
-        # A sua UniqueConstraint agora é id_dim_ativo + date
+        # A UniqueConstraint agora é id_dim_ativo + date
         upsert_stmt = fact_stmt.on_conflict_do_update(
             index_elements=['id_dim_ativo', 'date'],
             set_=update_dict
