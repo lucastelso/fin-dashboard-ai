@@ -100,7 +100,7 @@ httpx
 
 ### Passo 2 - 
 
-Criamos a conexão do banco de dados, as tabelas de 
+Criamos a conexão do banco de dados, as tabelas 
 
 ```
 backend/
@@ -112,4 +112,17 @@ backend/
     ├── fetch_yahoo.py    # Coleta dos dados direto a API do Yahoo
     └── db_repository.py  # Funções de interação com o banco (Upsert)
 
+```
+
+### Passo 3 - Inserir os dados no banco 
+
+A forma padrão de inserir os dados no banco de dados utilizando a nossa engine deve ser a seguinte:
+
+```python
+async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            
+        logger.info("Iniciando transação de persistência assíncrona...")
+        async with AsyncSessionLocal() as session:
+            await upsert_asset_prices(session, master_df)
 ```

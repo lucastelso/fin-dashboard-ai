@@ -3,9 +3,12 @@ import polars as pl
 from datetime import datetime, timezone
 import sys
 
-sys.path.append("../")  # Adiciona o diretório pai ao sys.path para importar core.logger
+sys.path.append("backend")  
+from core.database import Base, AsyncSessionLocal
+from services.db_repository import upsert_asset_prices 
 from core.logger import logger
 from services.fetch_yahoo import fetch_yahoo_json_async
+
 
 async def main():
     tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA"]
@@ -54,10 +57,12 @@ async def main():
                 pl.col("close").alias("fechamento").round(2),
                 pl.col("volume")
                 ]).sort("data"))
-
         
     else:
         logger.warning("Nenhum dado pôde ser ingerido da API direta.")
+
+    async with AsyncSessionLocal() as session:
+        await upsert_asset_prices(session, master_df) # type: ignore
 
 if __name__ == "__main__":
     asyncio.run(main())

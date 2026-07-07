@@ -4,6 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import func
 import polars as pl
+import sys 
+
+sys.path.append("backend")
+print(sys.path)
+
 from core.logger import logger
 
 from models.market import SeriesAtivos, DimensaoAtivos

@@ -1,7 +1,7 @@
 import httpx
 from datetime import datetime, timezone
 import sys
-sys.path.append("../")
+sys.path.append("backend")
 from core.logger import logger
 
 async def fetch_yahoo_json_async(
