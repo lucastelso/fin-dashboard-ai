@@ -1,6 +1,6 @@
 from datetime import datetime
 from polars import Decimal
-from sqlalchemy import MetaData, String, Integer, Text, DateTime, func, ForeignKey, Index, UniqueConstraint, Numeric 
+from sqlalchemy import MetaData, String, Integer, Text, DateTime, func, ForeignKey, Index, UniqueConstraint, Numeric, BigInteger 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 POSTGRES_NAMING_CONVENTION = {
@@ -22,7 +22,7 @@ class DimensaoAtivos(Base):
 
     id_dim_ativo: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ativo: Mapped[str] = mapped_column(String(9), nullable=False)
-    fonte: Mapped[int] = mapped_column(Integer, server_default="0") 
+    # fonte: Mapped[int] = mapped_column(Integer, server_default="0") 
 
     # Relacionamento no ORM (puramente para Python, não afeta o banco)
     extractions: Mapped[list["SeriesAtivos"]] = relationship(
@@ -40,7 +40,7 @@ class SeriesAtivos(Base):
     __tablename__ = "series_ativos"
     
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # A Chave Estrangeira aponta para o ID Inteiro da Dimensão
     id_dim_ativo: Mapped[int] = mapped_column(
         Integer, 
@@ -48,9 +48,11 @@ class SeriesAtivos(Base):
         nullable=False
     )
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    open: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    close: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
-    volume: Mapped[int] = mapped_column(Integer, nullable=False)
+    open: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    close: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    high: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    low: Mapped[Decimal] = mapped_column(Numeric(12, 2),    nullable=False)
+    volume: Mapped[int] = mapped_column(BigInteger, nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relacionamento no ORM
@@ -61,4 +63,5 @@ class SeriesAtivos(Base):
     __table_args__ = (
         # Índice crucial na FK para acelerar JOINS de volumetria pesada
         Index('ix_series_ativos_id_dim_ativo', 'id_dim_ativo'),
+        UniqueConstraint('id_dim_ativo', 'date', name='uq_series_ativos_id_dim_ativo_date')
     )

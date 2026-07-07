@@ -100,6 +100,7 @@ httpx
 
 ### Passo 2 - 
 
+Criamos a conexão do banco de dados, as tabelas de 
 
 ```
 backend/
@@ -108,7 +109,7 @@ backend/
 ├── models/
 │   └── market.py         # O mapeamento Declarativo (Tabelas)
 └── services/
-    ├── fetch_yahoo.py    # (Seu arquivo já existente)
+    ├── fetch_yahoo.py    # Coleta dos dados direto a API do Yahoo
     └── db_repository.py  # Funções de interação com o banco (Upsert)
 
 ```
