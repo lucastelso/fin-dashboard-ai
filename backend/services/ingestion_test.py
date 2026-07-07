@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import sys
 
 sys.path.append("backend")  
-from core.database import Base, AsyncSessionLocal
+from core.database import Base, engine,AsyncSessionLocal
 from services.db_repository import upsert_asset_prices 
 from core.logger import logger
 from services.fetch_yahoo import fetch_yahoo_json_async
@@ -56,13 +56,22 @@ async def main():
                 pl.col("open").alias("abertura").round(2),
                 pl.col("close").alias("fechamento").round(2),
                 pl.col("volume")
-                ]).sort("data"))
+                ]).sort("data").sample(25))
         
     else:
         logger.warning("Nenhum dado pôde ser ingerido da API direta.")
 
+    logger.info("Criando tabelas no banco de dados (se não existirem)...")
+    
+    # FASE 2 - Cria as tabelas automaticamente para testes (em prod usaremos Alembic)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
+    logger.info("Iniciando transação de persistência assíncrona...")
     async with AsyncSessionLocal() as session:
         await upsert_asset_prices(session, master_df) # type: ignore
+        
+    logger.info("Pipeline de ingestão e persistência concluída com sucesso.")   
 
 if __name__ == "__main__":
     asyncio.run(main())

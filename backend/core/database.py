@@ -2,13 +2,14 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 import os
+from dotenv import load_dotenv
 
-# Em produção, isso vem do .env. 
+load_dotenv(dotenv_path=".env")
+
 # Formato: postgresql+asyncpg://usuario:senha@host:porta/banco
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/finance_db"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("A variável DATABASE_URL não foi encontrada no ambiente.")
 
 # A engine é a fábrica de conexões. 
 # echo=False para não poluir o terminal, pool_size garante reuso de conexões.
