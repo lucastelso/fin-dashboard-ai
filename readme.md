@@ -126,3 +126,54 @@ async with engine.begin() as conn:
         async with AsyncSessionLocal() as session:
             await upsert_asset_prices(session, master_df)
 ```
+
+### Passo 4 - Criando uma classe de repositório
+
+A Engine é uma fábrica de conexões global. Se você atrelar a classe à Engine, você quebra o ciclo de vida transacional (ACID). No FastAPI, usamos o princípio da Injeção de Dependência (Dependency Injection). O FastAPI abre uma Session quando o usuário faz a requisição (ex: clica no gráfico), passa essa sessão viva para a sua classe, a classe busca os dados, e o FastAPI fecha a sessão ao devolver a resposta. Isso evita vazamento de memória e deadlocks no banco
+
+```python
+# backend/repositories/base.py
+import asyncio
+from typing import Any
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+import polars as pl
+from core.logger import logger
+
+class BaseMarketRepository:
+    """
+    Classe Abstrata de repositório focada em performance bruta.
+    Garante Injeção de Dependência da sessão assíncrona do FastAPI.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def fetch_as_polars(self, query_sql: str, params: dict[str, Any] | None = None) -> pl.DataFrame:
+        """
+        Executa SQL parametrizado assincronamente e vetoriza o resultado 
+        para a memória C/Rust do Polars evitando o gargalo do SQLAlchemy ORM.
+        """
+        try:
+            # 1. I/O Bound: Requisição de rede 100% não-bloqueante
+            result = await self.session.execute(text(query_sql), params or {})
+            
+            columns = list(result.keys())
+            raw_rows = result.fetchall()
+
+            if not raw_rows:
+                logger.warning("Query retornou vazia. Instanciando Polars vazio.")
+                return pl.DataFrame(schema=columns)
+
+            # 2. CPU Bound: Isolamento térmico da thread principal
+            def _build_dataframe(rows, cols):
+                pure_tuples = list(map(tuple, rows))
+                return pl.DataFrame(pure_tuples, schema=cols, orient="row")
+
+            df = await asyncio.to_thread(_build_dataframe, raw_rows, columns)
+            return df
+            
+        except Exception as e:
+            logger.error(f"Falha na extração vetorizada: {e}")
+            raise e
+```
