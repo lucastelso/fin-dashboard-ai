@@ -4,6 +4,8 @@ from sqlalchemy.engine import URL
 import os
 from dotenv import load_dotenv
 
+from core.logger import logger
+
 load_dotenv(dotenv_path=".env")
 
 DB_USER = os.getenv("POSTGRES_USER")
@@ -24,24 +26,43 @@ DATABASE_URL = URL.create(
     username=DB_USER,
     password=DB_PASS,
     host=DB_HOST,
-    port=DB_PORT, # type: ignore
+    port=int(DB_PORT),
     database=DB_NAME
 )
 
-print(f"\n[DEBUG DE REDE] Rodando no Docker? {is_running_in_docker()}")
+logger.debug(f"\nREDE: Rodando no Docker? {is_running_in_docker()}")
+
 
 # Usa o método render_as_string com hide_password para debugar em segurança
-print(f"[DEBUG DE REDE] Conectando em: {DATABASE_URL.render_as_string(hide_password=True)}\n")
+logger.debug(f"REDE: Conectando em: {DATABASE_URL.render_as_string(hide_password=True)}\n")
 
-# Passamos a URL construída (que não é mais uma string pura, mas um objeto URL)
-engine = create_async_engine(DATABASE_URL, echo=False, pool_size=10, max_overflow=20)
-
+# Motor do banco do proteções de I/O
+engine = create_async_engine(
+    DATABASE_URL, 
+    echo=False, 
+    pool_size=10, 
+    max_overflow=20,
+    pool_pre_ping=True, # Verifica se a conexão caiu (ex: reinício do banco) antes de usá-la
+    connect_args={
+        # Timeout para estabelecer a conexão com o banco (se ele cair, falha rápido em vez de travar)
+        "timeout": 10.0, 
+        
+        # O "Kill Switch" para queries analíticas pesadas. 
+        # Nenhuma transação pode passar de 60 segundos. 
+        # Acima disso, o asyncpg cancela a operação e libera o worker do FastAPI.
+        "command_timeout": 60.0 
+    }
+)
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, 
     class_=AsyncSession, 
-    expire_on_commit=False
+    expire_on_commit=False,
+    autoflush=False
 )
 
 async def get_db():
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()
