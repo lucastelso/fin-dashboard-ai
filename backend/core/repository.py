@@ -28,6 +28,17 @@ class BaseMarketRepository:
         """
         Executa SQL parametrizado assincronamente e vetoriza o resultado 
         para a memória C/Rust do Polars evitando o gargalo do SQLAlchemy ORM.
+        Recebe uma lista de tuplas (linhas) e uma lista de nomes de colunas, 
+        e constrói um DataFrame Polars, de modo a se restringir aos tipos
+        nativos do python (muito mais eficiente).
+
+        ### Parâmetros
+        - `query_sql`: A query SQL a ser executada.
+        - `params`: Dicionário de parâmetros para a query SQL.
+
+        ### Retorna
+        - Retorna um DataFrame Polars com os resultados da query.
+
         """
         try:
             # 1. I/O Bound: Requisição de rede 100% não-bloqueante
