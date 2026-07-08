@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 import sys
 
 sys.path.append("backend")  
+
 from core.database import engine, AsyncSessionLocal  # <-- Removi o Base daqui
-from services.db_repository import upsert_asset_prices 
+from services.db_upsert import upsert_asset_prices 
 from core.logger import logger
 from services.fetch_yahoo import fetch_yahoo_json_async
 from models.market import Base
