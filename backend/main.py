@@ -40,10 +40,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 1. Criamos o Router Global que vai abraçar TUDO da API.
+# Router Global que vai abraçar TUDO da API.
 api_router = APIRouter(prefix="/api-financeira")
 
-# 2. As rotas agora são penduradas no api_router, e não mais no app diretamente
+# As rotas agora são penduradas no api_router, e não mais no app diretamente
 @api_router.get("/health", tags=["Infraestrutura"])
 async def health_check():
     return {
@@ -51,13 +51,7 @@ async def health_check():
         "versao": "alpha"
         }
 
-@api_router.get("/dashboard", tags=["Analytics"])
-async def get_dashboard_metrics():
-    # Simulando um payload
-    return {
-        "kpi_mensal_inventado": 14500.50, 
-        "risco_sistemico": "baixo",
-        "ativos_em_alta": ["AAPL", "GOOGL", "AMZN"]}
-
-# 3. super-árvore de rotas na aplicação principal
+# super-árvore de rotas na aplicação principal
 app.include_router(api_router)
+# rota do dashboard
+# roda do ml
