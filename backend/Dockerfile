@@ -30,4 +30,4 @@ COPY . .
 
 # 8. CMD: O comando executado quando o container "acorda" (em tempo de execução).
 # Iniciamos o servidor ASGI (Uvicorn) apontando para a instância do FastAPI.
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
