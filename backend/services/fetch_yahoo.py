@@ -1,5 +1,6 @@
 import httpx
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import sys
 sys.path.append("backend")
 from core.logger import logger
@@ -68,15 +69,18 @@ async def fetch_yahoo_json_async(
             closes = indicators.get("close", [])
             volumes = indicators.get("volume", [])
             
+            fuso_br = ZoneInfo("America/Sao_Paulo")
+
             # Zipping arrays em dicionários (100% Python nativo)
             records = []
             for i, ts in enumerate(timestamps):
                 # O Yahoo pode ter lacunas (Nones) nos dados de preço durante feriados parciais
                 if closes[i] is not None: 
+                    data_corrigida = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(fuso_br).replace(tzinfo=None)
                     records.append({
                         "ticker": ticker,
                         # Converte timestamp Unix para datetime seguro
-                        "date": datetime.fromtimestamp(ts, tz=timezone.utc).replace(tzinfo=None),
+                        "date": data_corrigida,
                         "open": opens[i],
                         "high": highs[i],
                         "low": lows[i],
