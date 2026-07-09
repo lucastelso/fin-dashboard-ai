@@ -12,7 +12,7 @@ from core.logger import logger
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Gerencia o ciclo de vida da aplicação.
+    Gerencia o ciclo de vida da aplicação. 
     Aloca recursos pesados (como o Process Pool para ML) na inicialização
     e o encerra de forma segura depois que o trabalho foi feito ou o timeout
     foi trigado.
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     
     # Criamos um Process Pool (não Thread Pool) para bypassar o GIL em tarefas CPU-Bound
     app.state.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
-    logger.info(f"Compute Plane instanciado com {workers} processos paralelos.")
+    logger.info(f"ProcessPool instanciado com {workers} processos paralelos.")
     
     yield
     
@@ -36,14 +36,6 @@ app = FastAPI(
     title="Dashboard Financeiro - Analytics de Ativos",
     description="API de análise quantitativa e qualitativa (IA) de ativos de mercado",
     lifespan=lifespan
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Ajustar em produção
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 @app.get("/health", tags=["Infraestrutura"])
