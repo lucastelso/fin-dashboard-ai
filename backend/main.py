@@ -11,19 +11,9 @@ from core.logger import logger
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Gerencia o ciclo de vida da aplicação. 
-    Aloca recursos pesados (como o Process Pool para ML) na inicialização
-    e o encerra de forma segura depois que o trabalho foi feito ou o timeout
-    foi trigado.
-    """
     logger.info("Inicializando Dashboard Financeiro - API...")
     
-    # Descobre quantos núcleos físicos temos e reserva para o Machine Learning
-    # Evita usar 100% da máquina para não travar o SO
     workers = max(1, multiprocessing.cpu_count() - 2)
-    
-    # Criamos um Process Pool (não Thread Pool) para bypassar o GIL em tarefas CPU-Bound
     app.state.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     logger.info(f"ProcessPool instanciado com {workers} processos paralelos.")
     
@@ -38,8 +28,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-@app.get("/health", tags=["Infraestrutura"])
+# Adicionamos o prefixo /api para casar com a regra de roteamento do Nginx
+@app.get("/api/health", tags=["Infraestrutura"])
 async def health_check():
     return {"status": "operacional"}
 
+# Quando formos usar os routers separados, faremos assim:
 # app.include_router(market.router, prefix="/api/v1/market", tags=["Market Data"])
