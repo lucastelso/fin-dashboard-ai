@@ -22,6 +22,8 @@ async def fetch_data() -> pl.DataFrame:
     LIMIT 10
 
     """
+
+    ## APENAS PARA TESTE, NÃO USAR "read_database" EM PRODUÇÃO, POIS ELE BLOQUEIA O EVENT LOOP DO FASTAPI!!!!
     df = await asyncio.to_thread(pl.read_database, query=query, connection=engine)
     return df
 

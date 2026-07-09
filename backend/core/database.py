@@ -1,8 +1,11 @@
 # backend/core/database.py
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.engine import URL 
-import os
 from dotenv import load_dotenv
+import sys
+import os
+
+sys.path.append("backend")
 
 from core.logger import logger
 
