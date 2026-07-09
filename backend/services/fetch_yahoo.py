@@ -31,7 +31,7 @@ async def fetch_yahoo_json_async(
     params = {
         "period1": start_timestamp,
         "period2": end_timestamp,
-        "interval": "1d",
+        "interval": "1h",
         "events": "history"
     }
     
