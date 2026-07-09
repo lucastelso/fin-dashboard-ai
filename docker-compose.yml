@@ -18,7 +18,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # REMOVIDO: ports - "5432:5432". O banco de dados agora é invisível de fora.
+    ports:
+      - "5432:5432" # REMOVER EM PRODUÇÃO. A porta do Postgres não deve ser exposta para a internet!!!!!
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

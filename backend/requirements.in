@@ -12,10 +12,12 @@ polars
 scikit-learn
 
 # External Data & LLM
-yfinance
 google-generativeai
 
 # Utilities
 python-dotenv
 httpx
 pyarrow
+
+# Scheduling
+apscheduler

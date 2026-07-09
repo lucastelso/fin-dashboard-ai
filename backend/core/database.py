@@ -15,14 +15,15 @@ DB_USER = os.getenv("POSTGRES_USER")
 DB_PASS = os.getenv("POSTGRES_PASSWORD")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("POSTGRES_DB")
+DB_HOST = os.getenv("DB_HOST", "postgres_db")  # Nome do serviço no docker-compose.yml
 
 def is_running_in_docker() -> bool:
     return os.path.exists('/.dockerenv')
 
-if is_running_in_docker():
-    DB_HOST = "postgres_db" 
-else:
-    DB_HOST = "127.0.0.1"
+# if is_running_in_docker():
+#     DB_HOST = "postgres_db" 
+# else:
+#     DB_HOST = "127.0.0.1"
 
 DATABASE_URL = URL.create(
     drivername="postgresql+asyncpg",
