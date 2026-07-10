@@ -34,18 +34,6 @@ async def main():
             repo = TesteFetchBD(session=session)
             df = await repo.fetch_data()
             logger.info("Dados extraídos com sucesso.")
-            print(
-                df.filter(
-                    pl.col("date").is_between(
-                        datetime(2026, 7, 1, 1, 0),    # Início do dia (00:00)
-                        datetime(2026, 7, 2, 23, 59)   # Fim do dia (23:59)
-                    )
-                )
-                .select(
-                    pl.col("date").min().alias("menor_hora"),
-                    pl.col("date").max().alias("maior_hora")
-                    )
-                )
             print(df)
             
     except Exception as e:

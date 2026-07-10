@@ -4,7 +4,7 @@ from fastapi import FastAPI, APIRouter
 import concurrent.futures
 import multiprocessing
 
-from services.scheduler import setup_scheduler, scheduler
+from services.scheduler import setup_scheduler, scheduler, job_ingestao_5m
 from core.logger import logger
 from core.database import engine
 from models.market import Base
@@ -19,7 +19,13 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # 2. Cria um ProcessPoolExecutor para tarefas pesadas, como ingestão de dados
+    # 2. Cria um ProcessPoolExecutor para tarefas pesadas e inicia ingestão de dados
+    try:
+        await job_ingestao_5m()
+        logger.info("[BOOTSTRAP] Carga inicial concluída com sucesso.")
+    except Exception as e:
+        logger.error(f"[BOOTSTRAP] Falha crítica na carga inicial: {e}")
+    
     workers = max(1, multiprocessing.cpu_count() - 2)
     app.state.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     

@@ -17,9 +17,9 @@ from services.db_upsert import upsert_asset_prices
 # Agendador assíncrono
 scheduler = AsyncIOScheduler()
 
-async def job_ingestao_15m():
+async def job_ingestao_5m():
     """
-    Job que roda a cada 15 min. Puxa os dados dos últimos 7 dias 
+    Job que roda a cada 5 min. Puxa os dados dos últimos 7 dias 
     (margem de segurança para feriados/finais de semana) e faz o Upsert.
     """
     logger.info("[CRON] Iniciando rotina de ingestão intradiária (15m)...")
@@ -74,14 +74,14 @@ def setup_scheduler():
     trigger = CronTrigger(
         day_of_week='mon-fri',
         hour='10-17',
-        minute='*/15', 
+        minute='*/5', 
         timezone='America/Sao_Paulo'
     )
     
     scheduler.add_job(
-        job_ingestao_15m, 
+        job_ingestao_5m, 
         trigger=trigger, 
-        id='market_ingestion_15m', 
+        id='market_ingestion_5m', 
         replace_existing=True
     )
     return scheduler
