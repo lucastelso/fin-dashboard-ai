@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import func
 import polars as pl
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import sys 
 
 sys.path.append("backend")
@@ -76,14 +78,14 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
             
             fact_records = batch_df.to_dicts()
             fact_stmt = insert(SeriesAtivos).values(fact_records)
-
+            
             update_dict = {
                 "open": fact_stmt.excluded.open,
                 "high": fact_stmt.excluded.high,
                 "low": fact_stmt.excluded.low,
                 "close": fact_stmt.excluded.close,
                 "volume": fact_stmt.excluded.volume,
-                "atualizado_em": func.now()
+                "atualizado_em": datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
             }
 
             upsert_stmt = fact_stmt.on_conflict_do_update(

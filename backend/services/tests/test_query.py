@@ -18,10 +18,12 @@ class TesteFetchBD(BaseMarketRepository):
                 q.date,  
                 q.open, 
                 q.close, 
-                q.volume
+                q.volume,
+                q.atualizado_em
             FROM dim_ativos as p
             INNER JOIN series_ativos as q
                 ON p.id_dim_ativo = q.id_dim_ativo
+            ORDER BY q.date DESC
         """
 
         df = await self.fetch_as_polars(query)

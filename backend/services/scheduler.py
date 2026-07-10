@@ -17,23 +17,43 @@ from services.db_upsert import upsert_asset_prices
 # Agendador assíncrono
 scheduler = AsyncIOScheduler()
 
+TICKERS_B3 = [
+    "PETR4.SA", "PETR3.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBDC3.SA", 
+    "BBAS3.SA", "ABEV3.SA", "WEGE3.SA", "SUZB3.SA", "ELET3.SA", "RENT3.SA", 
+    "B3SA3.SA", "RADL3.SA", "JBSS3.SA", "BPAC11.SA", "EQTL3.SA", "VIVT3.SA",
+    "RAIL3.SA", "SBSP3.SA", "PRIO3.SA", "CPLE6.SA", "BBSE3.SA", "GGBR4.SA",
+    "UGPA3.SA", "CMIG4.SA", "CSAN3.SA", "HYPE3.SA", "ENEV3.SA", "TIMS3.SA",
+    "CCRO3.SA", "TOTS3.SA", "EGIE3.SA", "KLBN11.SA", "CSNA3.SA", "ALPA4.SA",
+    "BOVA11.SA", "IVVB11.SA", "LVOL11.SA", "DIVO11.SA", "SMAL11.SA"
+    # Pode adicionar até 100 aqui sem medo
+]
+
 async def job_ingestao_5m():
-    """
-    Job que roda a cada 5 min. Puxa os dados dos últimos 7 dias 
-    (margem de segurança para feriados/finais de semana) e faz o Upsert.
-    """
-    logger.info("[CRON] Iniciando rotina de ingestão intradiária (15m)...")
+    logger.info(f"[CRON] Iniciando rotina de ingestão para {len(TICKERS_B3)} ativos...")
     
-    tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA", "LVOL11.SA"]
-    
-    # Busca sempre os últimos 7 dias para garantir que não haja buracos na base
     end_dt = datetime.now(tz=timezone.utc)
     start_dt = end_dt - timedelta(days=7)
     
     start_ts = int(start_dt.timestamp())
     end_ts = int(end_dt.timestamp())
 
-    tasks = [fetch_yahoo_json_async(t, start_ts, end_ts) for t in tickers]
+    semaforo = asyncio.Semaphore(5) # DEFINIDO PARA 5 REQUISIÇÕES HTTP POR VEZ
+
+    async def fetch_com_semaforo(ticker):
+        """
+        Queremos colocar dezenas de ações ao mesmo tempo, mas o firewall do yahoo nos verá
+        como um ameaça ou um ataque de DDoS se tiver 100 conexões HTTP neles de uma vez. 
+        Com o código abaixo, usamos a regra do semáforo, ou seja, uma catraca para enviarmos apenas
+        cinco requisições por vez, ainda de forma concorrente, mas sendo civilizados para não termos
+        nosso IP bloqueado.
+        """
+        async with semaforo:
+            # Colocamos um mini-delay de 100ms para amaciar o tráfego
+            await asyncio.sleep(0.1) 
+            return await fetch_yahoo_json_async(ticker, start_ts, end_ts)
+
+    # Cria as tarefas envoltas no semáforo
+    tasks = [fetch_com_semaforo(t) for t in TICKERS_B3]
     results = await asyncio.gather(*tasks)
 
     all_records = []
