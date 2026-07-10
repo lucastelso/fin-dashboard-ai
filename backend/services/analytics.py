@@ -43,19 +43,18 @@ class IndicadoresAnaliticos(BaseMarketRepository):
             if df.is_empty():
                 return {'ativo': ativo, 'dados': []}
 
-            # ORDENAÇÃO
             df = df.sort("data")
 
             # FEATURE ENGINEERING: Cria a coluna de média móvel na memória Rust
             df = df.with_columns(
-                pl.col("fechamento").rolling_mean(window_size=janela).alias(f"sma_{janela}")
+                pl.col("fechamento").rolling_mean(window_size=janela).alias(f"mv_avg_{janela}")
             )
 
             # limpa as primeiras linhas (que ficam com valor nulo por causa da janela)
-            df_limpo = df.drop_nulls(subset=[f"sma_{janela}"])
+            df_limpo = df.drop_nulls(subset=[f"mv_avg_{janela}"])
 
             # O Polars possui um cast nativo de datas para strings ISO (ótimo para JSON)
             df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))
 
-            return {'ativo': ativo, 'dados': df_limpo.to_dicts()}
+            return {'dados': df_limpo.to_dicts()}
             
