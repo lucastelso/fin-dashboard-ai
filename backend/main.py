@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     # 3. Liga o Agendador de Ingestão em background
     setup_scheduler()
     scheduler.start()
-    logger.info("Scheduler iniciado. Ingestão rodará de seg-sex, 10h-17h a cada 5m.")
+    logger.info("Scheduler iniciado. Ingestão rodará de seg-sex, 10h-17h a cada 15m.")
     
     yield # HORA DO SHOW
 

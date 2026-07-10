@@ -9,8 +9,8 @@ import sys
 sys.path.append("backend") 
 
 from core.logger import logger
-from core.database import AsyncSessionLocal, engine
-from models.market import Base
+from core.database import AsyncSessionLocal
+# from models.market import Base ADICIONAR DEPOIS PARA GARANTIR O FORMATO DESEJADO
 from services.fetch_yahoo import fetch_yahoo_json_async
 from services.db_upsert import upsert_asset_prices
 
@@ -19,14 +19,16 @@ scheduler = AsyncIOScheduler()
 
 TICKERS_B3 = [
     "PETR4.SA", "PETR3.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBDC3.SA", 
-    "BBAS3.SA", "ABEV3.SA", "WEGE3.SA", "SUZB3.SA", "ELET3.SA", "RENT3.SA", 
+    "BBAS3.SA", "ABEV3.SA", "WEGE3.SA", "SUZB3.SA",  "RENT3.SA", 
     "B3SA3.SA", "RADL3.SA", "JBSS3.SA", "BPAC11.SA", "EQTL3.SA", "VIVT3.SA",
-    "RAIL3.SA", "SBSP3.SA", "PRIO3.SA", "CPLE6.SA", "BBSE3.SA", "GGBR4.SA",
+    "RAIL3.SA", "SBSP3.SA", "PRIO3.SA", "BBSE3.SA", "GGBR4.SA",
     "UGPA3.SA", "CMIG4.SA", "CSAN3.SA", "HYPE3.SA", "ENEV3.SA", "TIMS3.SA",
-    "CCRO3.SA", "TOTS3.SA", "EGIE3.SA", "KLBN11.SA", "CSNA3.SA", "ALPA4.SA",
-    "BOVA11.SA", "IVVB11.SA", "LVOL11.SA", "DIVO11.SA", "SMAL11.SA"
+    "TOTS3.SA", "EGIE3.SA", "KLBN11.SA", "CSNA3.SA", "ALPA4.SA",
+    "IVVB11.SA", "LVOL11.SA", "DIVO11.SA", "SMAL11.SA", "BOVA11.SA"
     # Pode adicionar até 100 aqui sem medo
 ]
+
+
 
 async def job_ingestao_5m():
     logger.info(f"[CRON] Iniciando rotina de ingestão para {len(TICKERS_B3)} ativos...")
@@ -86,22 +88,19 @@ def setup_scheduler():
     """
     Configura os gatilhos do Cron e acopla ao scheduler.
     """
-    # Trigger configurado para:
-    # - Dias da semana: Segunda a Sexta (mon-fri)
-    # - Horas: 10h às 17h
-    # - Minutos: A cada 15 min (0, 15, 30, 45)
-    # Obs: Ajuste o fuso horário caso o relógio do Docker esteja em UTC.
+    # Alterado para '*/15': O job acorda nos minutos 0, 15, 30 e 45 de cada hora.
+    # Captura todos os candles de 5 minutos gerados no intervalo com total segurança.
     trigger = CronTrigger(
         day_of_week='mon-fri',
         hour='10-17',
-        minute='*/5', 
+        minute='*/15', 
         timezone='America/Sao_Paulo'
     )
     
     scheduler.add_job(
         job_ingestao_5m, 
-        trigger=trigger, 
-        id='market_ingestion_5m', 
+        trigger=trigger,
+        id='market_ingestion_15m', 
         replace_existing=True
     )
     return scheduler

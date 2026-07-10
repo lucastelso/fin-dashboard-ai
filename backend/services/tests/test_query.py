@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import polars as pl
-from datetime import datetime
 
 sys.path.append("backend")
 from core.database import AsyncSessionLocal
