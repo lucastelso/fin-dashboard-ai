@@ -22,6 +22,7 @@ class TesteFetchBD(BaseMarketRepository):
             FROM dim_ativos as p
             INNER JOIN series_ativos as q
                 ON p.id_dim_ativo = q.id_dim_ativo
+            -- WHERE p.id_dim_ativo = 6
         """
 
         df = await self.fetch_as_polars(query)
