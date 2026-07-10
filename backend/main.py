@@ -8,6 +8,7 @@ from services.scheduler import setup_scheduler, scheduler, job_ingestao_5m
 from core.logger import logger
 from core.database import engine
 from models.market import Base
+from api.routers.dashboard import router as dashboard_router
 
 # from api.routers import market 
 
@@ -49,6 +50,12 @@ app = FastAPI(
 # Router Global que vai abraçar TUDO da API.
 api_router = APIRouter(prefix="/api-financeira")
 
+@api_router.get("/", tags=["greetings"])
+async def greetings():
+    return {
+        "Greetings": "BOAS VINDAS AO ENDPOINT DO DASHBOARD FINANCEIRO INTELIGENTE"
+    }
+
 # As rotas agora são penduradas no api_router, e não mais no app diretamente
 @api_router.get("/health", tags=["Infraestrutura"])
 async def health_check():
@@ -58,6 +65,9 @@ async def health_check():
         }
 
 # super-árvore de rotas na aplicação principal
+api_router.include_router(dashboard_router)
+
+# Por fim, o app engole a árvore inteira
 app.include_router(api_router)
 # rota do dashboard
 # roda do ml
