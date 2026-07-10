@@ -69,32 +69,37 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         # ==========================================
         # ETAPA 4: UPSERT NA TABELA FATO
         # ==========================================
-        fact_stmt = insert(SeriesAtivos).values(fact_records)
-
-        # Se o dado já existe (mesmo ativo no mesmo dia), atualizamos os valores financeiros
-        update_dict = {
-            "open": fact_stmt.excluded.open,
-            "high": fact_stmt.excluded.high,
-            "low": fact_stmt.excluded.low,
-            "close": fact_stmt.excluded.close,
-            "volume": fact_stmt.excluded.volume,
-            "atualizado_em": func.now()  # Garante que saibamos quando o dado foi corrigido
-        }
-
-        # A UniqueConstraint agora é id_dim_ativo + date
-        upsert_stmt = fact_stmt.on_conflict_do_update(
-            index_elements=['id_dim_ativo', 'date'],
-            set_=update_dict
-        )
-
-        await session.execute(upsert_stmt)
+        batch_size = 1000
         
-        # O Commit consolida a inserção na dimensão e na fato ao mesmo tempo (ACID)
+        # df_mapped.iter_slices() retorna views do DataFrame sem copiar a memória
+        for batch_df in df_mapped.iter_slices(batch_size):
+            
+            fact_records = batch_df.to_dicts()
+            fact_stmt = insert(SeriesAtivos).values(fact_records)
+
+            update_dict = {
+                "open": fact_stmt.excluded.open,
+                "high": fact_stmt.excluded.high,
+                "low": fact_stmt.excluded.low,
+                "close": fact_stmt.excluded.close,
+                "volume": fact_stmt.excluded.volume,
+                "atualizado_em": func.now()
+            }
+
+            upsert_stmt = fact_stmt.on_conflict_do_update(
+                index_elements=['id_dim_ativo', 'date'],
+                set_=update_dict
+            )
+
+            # Executa o lote. Como ainda não fizemos commit, se falhar no meio,
+            # tudo será cancelado, preservando a integridade.
+            await session.execute(upsert_stmt)
+            
+        # O Commit consolida a inserção massiva na dimensão e na fato
         await session.commit()
-        logger.info(f"Sucesso: {len(fact_records)} registros na Fato e {len(unique_tickers)} ativos mapeados.")
+        logger.info(f"Sucesso: {df.height} registros inseridos/atualizados em blocos de {batch_size}.")
 
     except Exception as e:
-        # Se qualquer coisa falhar, nada é salvo (evita inconsistência relacional)
         await session.rollback()
         logger.error(f"Erro transacional ao salvar no banco: {e}")
         raise e

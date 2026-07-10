@@ -1,6 +1,6 @@
 import asyncio
 import polars as pl
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import sys
 
 sys.path.append("backend")  
@@ -14,12 +14,11 @@ from models.market import Base
 async def main():
     tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA", "LVOL11.SA"]
     
-    start_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
     end_dt = datetime.now(tz=timezone.utc)
+    start_dt = end_dt - timedelta(days=59) # Máximo permitido pelo Yahoo para "5m"
     
     start_ts = int(start_dt.timestamp())
     end_ts = int(end_dt.timestamp())
-
     logger.info(f"Buscando JSON direto para {len(tickers)} ativos via httpx...")
 
     tasks = [fetch_yahoo_json_async(t, start_ts, end_ts) for t in tickers]

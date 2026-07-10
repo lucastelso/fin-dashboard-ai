@@ -177,3 +177,14 @@ class BaseMarketRepository:
             logger.error(f"Falha na extração vetorizada: {e}")
             raise e
 ```
+
+
+
+
+
+#### Backup do bacno de dados
+
+```bash
+docker exec -t fin_postgres pg_dump -U fin-dashboard-admin -d fin-dashboard-db -F c -f /tmp/db_backup.dump
+docker cp fin_postgres:/tmp/db_backup.dump ./meu_backup_b3.dump
+```
