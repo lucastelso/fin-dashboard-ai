@@ -1,5 +1,6 @@
 import sys 
 import polars as pl
+import numpy as np
 from typing import Any, Dict
 from datetime import datetime
 
@@ -10,9 +11,26 @@ from core.logger import logger
 class IndicadoresAnaliticos(BaseMarketRepository):
     """Repositorio com os métodos relacionados ao Analytics de ativos financeiros"""
 
+    async def acoes_do_mercado(self, dt_inicio: str, dt_fim: str, ativo: list | str | None) -> Dict[str, Any]:
+         """Seleciona todos indicadores ou iuma certa quantidade deles. Se nenhum ativo em particular for selecionado
+         coleta todos os ativos (abertura e fechamento)"""
+         
+         
+         return {}
+         
+
     async def get_media_movel(self, dt_inicio: str, dt_fim: str, ativo: str, janela: int = 5) -> Dict[str, Any]:
             """
             Calcula a média móvel simples (SMA) via Polars.
+
+            #### Parâmetros
+            - **dt_inicio (str)**: Data de início da série 
+            - **dt_fim (str)**: Data final da série
+            - **ativo (str)**: Nome do ativo 
+
+            #### Retorna
+            Dicionário nativamente serializável para JSON.
+
             """
             query = """
                 SELECT 
@@ -57,4 +75,22 @@ class IndicadoresAnaliticos(BaseMarketRepository):
             df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))
 
             return {'dados': df_limpo.to_dicts()}
+    
+
+    # async def generate_financial_features(self, df: pl.DataFrame, ativo: str, price_col: str = "close") -> pl.DataFrame:
+    #     """
+    #     Gera retornos logarítmicos, médias móveis e 
+    #     volatilidade usando expressões otimizadas.
+    #     Espera um DataFrame ordenado cronologicamente.
+    #     """
+    #     return df.with_columns([
+    #         # Retorno Logarítmico
+    #         (pl.col(price_col).log() - pl.col(price_col).shift(1).log()).alias("log_return"),
             
+    #         # Média Móvel Exponencial (EMA) - Sensível a choques recentes
+    #         pl.col(price_col).ewm_mean(span=20, adjust=False).alias("mov_avg_exp_20"),
+    #     ]).with_columns([
+    #         # Volatilidade (Desvio padrão anualizado assumindo 252 dias úteis)
+    #         (pl.col("log_return").rolling_std(window_size=20) * np.sqrt(252)).alias("volatility_20d")
+    #     ]).drop_nulls()
+        

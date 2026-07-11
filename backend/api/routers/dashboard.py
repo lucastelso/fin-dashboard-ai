@@ -30,7 +30,7 @@ async def get_dashboard(
         if not resultado['dados']:
             raise HTTPException(status_code=404, detail="Sem dados para este ativo no período.")
             
-        return resultado
+        return {"media_movel":resultado}
         
     except HTTPException:
         raise
