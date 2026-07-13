@@ -1,11 +1,13 @@
 # backend/api/routers/dashboard.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+import asyncio
 
 from core.database import get_db
 from core.logger import logger
 from services.analytics import IndicadoresAnaliticos
+from services.ml import executar_pipeline_kmeans
 
 # Definição do Router Modular com o prefixo unificado
 router = APIRouter(
@@ -14,7 +16,7 @@ router = APIRouter(
 )
 @router.get("/resumo")
 async def resumo_mercado(
-    # Usamos 'examples' (plural) com uma lista para alinhar com o Pydantic V2
+    # 'examples' no plural com uma lista para alinhar com o Pydantic V2
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
     session: AsyncSession = Depends(get_db)
@@ -72,3 +74,47 @@ async def serie_temporal_ativos(
     except Exception as e:
         logger.error(f"Falha crítica no endpoint /series: {e}")
         raise HTTPException(status_code=500, detail="Erro interno no cálculo quantitativo da série temporal.")
+    
+
+@router.get("/machine-learning")
+async def analise_avancada_ml(
+    request: Request,
+    dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    ativos: Optional[List[str]] = Query(None, description="Tickers para clusterização. Vazio = Todos", alias="ativos"),
+    n_clusters: int = Query(4, description="Quantidade de grupos desejada"),
+    session: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Endpoint de Machine Learning (Heavy Compute).
+    """
+    try:
+        # A MAGIA DO FALLBACK: Se o usuário não enviou ativos,, pega a lista completa
+        lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
+
+        analyzer = IndicadoresAnaliticos(session)
+        matriz_retornos = await analyzer.get_features_ml(
+            dt_inicio=dt_inicio, dt_fim=dt_fim, ativos=lista_ativos
+        )
+        
+        if not matriz_retornos:
+            raise HTTPException(status_code=404, detail="Sem dados suficientes para análise.")
+
+        # Compute Bound: Despacha para um núcleo livre da CPU
+        loop = asyncio.get_running_loop()
+        pool = request.app.state.process_pool 
+        
+        resultado_ml = await loop.run_in_executor(
+            pool, 
+            executar_pipeline_kmeans, 
+            matriz_retornos, 
+            n_clusters
+        )
+        
+        return resultado_ml
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro catastrófico no pipeline de ML: {e}")
+        raise HTTPException(status_code=500, detail="Falha no modelo de Machine Learning.")
