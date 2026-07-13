@@ -57,9 +57,6 @@ async def main():
         ]).sort("data").sample(25)
     )
 
-    # ==========================================
-    # FASE 2: PERSISTÊNCIA BINDADA AO SUCESSO
-    # ==========================================
     logger.info("Criando tabelas no banco de dados (se não existirem)...")
     
     async with engine.begin() as conn:
