@@ -9,6 +9,8 @@ from core.logger import logger
 from services.analytics import IndicadoresAnaliticos
 from services.ml import executar_pipeline_kmeans
 from services.macro_eco import MacroeconomiaAPI
+from services.llm import AnalistaQualitativo
+from services.macro_eco import MacroeconomiaAPI
 
 # Definição do Router Modular com o prefixo unificado
 router = APIRouter(
@@ -133,3 +135,47 @@ async def analise_avancada_ml(
     except Exception as e:
         logger.error(f"Erro catastrófico no pipeline de ML: {e}")
         raise HTTPException(status_code=500, detail="Falha no modelo de Machine Learning.")
+    
+
+@router.get("/analise-qualitativa")
+async def analise_qualitativa_ia(
+    dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    ativos: List[str] = Query(None, description="Tickers alvo", alias="ativos"),
+    session: AsyncSession = Depends(get_db)
+) -> Dict[str, str]:
+    """
+    Retorna um texto (Markdown) gerado por IA (Gemini) explicando os motivos 
+    sociológicos e macroeconômicos por trás dos números do período.
+    """
+    try:
+        lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
+        analyzer = IndicadoresAnaliticos(session)
+        
+        # Coleta a matemática (Usamos apenas as features 2D para economizar tokens na IA)
+        dados_quantitativos = await analyzer.get_features_ml(dt_inicio, dt_fim, lista_ativos)
+        features_2d = dados_quantitativos.get("features_2d", [])
+        
+        # Coleta o cenário Macro
+        kpis_macro = await MacroeconomiaAPI.get_kpis_gerais()
+
+        # Despacha para a IA (Como é uma chamada de rede I/O, o ideal é usar asyncio.to_thread para não travar o loop, ou o próprio SDK genai em modo async se disponível. Vamos usar to_thread por segurança).
+        ia_service = AnalistaQualitativo()
+        loop = asyncio.get_running_loop()
+        
+        # Roda a chamada da API do Gemini de forma segura
+        sintese = await loop.run_in_executor(
+            None, 
+            ia_service.gerar_sintese, 
+            dt_inicio, 
+            dt_fim, 
+            features_2d, 
+            kpis_macro,
+            lista_ativos
+        )
+        
+        return {"texto_analise": sintese}
+
+    except Exception as e:
+        logger.error(f"Erro no endpoint /analise-qualitativa: {e}")
+        raise HTTPException(status_code=500, detail="Falha ao gerar síntese da IA.")
