@@ -47,15 +47,15 @@ services:
     networks:
       - fin_network
 
-  # # ADICIONADO: O serviço do frontend que o Nginx estava exigindo
-  # frontend:
-  #   build: 
-  #     context: ./frontend
-  #   container_name: fin_frontend
-  #   restart: unless-stopped
-  #   # O frontend também fica trancado na rede interna.
-  #   networks:
-  #     - fin_network
+  # ADICIONADO: O serviço do frontend que o Nginx estava exigindo
+  frontend:
+    build: 
+      context: ./frontend
+    container_name: fin_frontend
+    restart: unless-stopped
+    # O frontend também fica trancado na rede interna.
+    networks:
+      - fin_network
 
 volumes:
   postgres_data:
