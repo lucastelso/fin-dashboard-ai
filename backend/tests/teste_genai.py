@@ -38,7 +38,7 @@ def testar_gemini():
     
     dados_quant = [
         {"ativo": "PETR4.SA", "retorno_acumulado": 2.5, "volatilidade": 1.2},
-        {"ativo": "VALE3.SA", "retorno_acumulado": -4.1, "volatilidade": 2.8}
+        {"ativo": "BBAS3.SA", "retorno_acumulado": -4.1, "volatilidade": 2.8}
     ]
     
     try:
