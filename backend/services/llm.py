@@ -1,4 +1,3 @@
-# backend/services/llm.py
 import os
 import json
 from google import genai
@@ -13,7 +12,7 @@ class AnalistaQualitativo:
     """
     def __init__(self):
         self.client = genai.Client()
-        self.modelo = "gemini-2.5-flash"
+        self.modelo = "gemini-3.5-flash"
 
     def gerar_sintese(
             self, 
