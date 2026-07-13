@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
-import { Activity, TrendingUp, BarChart3, BrainCircuit, Loader2 } from 'lucide-react';
+import { Activity, TrendingUp, BarChart3, BrainCircuit, Loader2, Search } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const DICIONARIO_ATIVOS: Record<string, string> = {
@@ -24,6 +24,7 @@ interface DashboardMacroProps {
 export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroProps) {
   const [ativoSelecionado, setAtivoSelecionado] = useState('BOVA11.SA');
   const [janelaEma, setJanelaEma] = useState(20);
+  const [termoBusca, setTermoBusca] = useState('');
 
   const { data: kpiData } = useQuery({
     queryKey: ['kpis-macro'],
@@ -42,7 +43,6 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
     queryKey: ['serie-temporal', dataInicio, dataFim, ativoSelecionado, janelaEma],
     queryFn: async () => {
       const res = await apiClient.get('/dashboard-ativos/series', {
-        // CORREÇÃO: Passando como string pura para o FastAPI entender
         params: { dt_inicio: dataInicio, dt_fim: dataFim, ativos: ativoSelecionado, janela: janelaEma }
       });
       return res.data.dados;
@@ -60,8 +60,19 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
     enabled: false, 
   });
 
+  // Motor de busca em memória RAM (Case Insensitive) para Ticker e Nome
+  const ativosFiltrados = resumoData?.filter((item: any) => {
+    const nomeEmpresa = DICIONARIO_ATIVOS[item.ativo] || '';
+    const termo = termoBusca.toLowerCase();
+    return (
+      item.ativo.toLowerCase().includes(termo) || 
+      nomeEmpresa.toLowerCase().includes(termo)
+    );
+  }) || [];
+
   return (
     <div className="space-y-6">
+      {/* KPIs Macro */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
           <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><Activity className="w-6 h-6" /></div>
@@ -78,8 +89,21 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Painel Esquerdo: Busca e Tabela */}
         <div className="lg:col-span-1 bg-slate-900 rounded-xl border border-slate-800 p-6 flex flex-col h-[500px]">
-          <h2 className="text-lg font-bold text-white mb-4">Performance dos Ativos</h2>
+          <h2 className="text-lg font-bold text-white mb-3">Performance dos Ativos</h2>
+          
+          <div className="flex items-center gap-2 mb-4 bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+            <Search className="w-4 h-4 text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Buscar ativo ou empresa..." 
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+              className="bg-transparent border-none text-sm text-slate-200 outline-none w-full placeholder-slate-600 focus:ring-0"
+            />
+          </div>
+
           <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
             {resumoLoading ? <p className="text-slate-500">Buscando dados...</p> : (
               <table className="w-full text-left text-sm">
@@ -90,18 +114,24 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
-                  {resumoData?.map((item: any) => (
+                  {ativosFiltrados.map((item: any) => (
                     <tr key={item.ativo} onClick={() => setAtivoSelecionado(item.ativo)} className={`cursor-pointer transition-colors ${ativoSelecionado === item.ativo ? 'bg-slate-800/80' : 'hover:bg-slate-800/40'}`}>
                       <td className="py-3 px-2"><div className="font-bold text-slate-200">{item.ativo}</div><div className="text-xs text-slate-500">{DICIONARIO_ATIVOS[item.ativo] || 'Empresa B3'}</div></td>
                       <td className={`py-3 px-2 text-right font-bold ${item.variacao_percentual >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{item.variacao_percentual > 0 ? '+' : ''}{item.variacao_percentual}%</td>
                     </tr>
                   ))}
+                  {ativosFiltrados.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-8 text-center text-slate-500 text-sm">Nenhum ativo encontrado.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             )}
           </div>
         </div>
 
+        {/* Painel Direito: Série Temporal com EMA Dinâmica */}
         <div className="lg:col-span-2 bg-slate-900 rounded-xl border border-slate-800 p-6 flex flex-col h-[500px]">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -142,6 +172,7 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
         </div>
       </div>
 
+      {/* Módulo de Inteligência Artificial */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">

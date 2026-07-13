@@ -184,7 +184,7 @@ export default function DashboardML({ dataInicio, dataFim }: DashboardMLProps) {
              {mlLoading ? (
                 <div className="flex h-full items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-600" /></div>
              ) : dadosBoxplot.length > 0 ? (
-               <ResponsiveBoxPlot
+            <ResponsiveBoxPlot
                   data={dadosBoxplot}
                   margin={{ top: 20, right: 20, bottom: 60, left: 60 }}
                   groupBy="cluster"
@@ -192,10 +192,21 @@ export default function DashboardML({ dataInicio, dataFim }: DashboardMLProps) {
                   quantiles={[0.1, 0.25, 0.5, 0.75, 0.9]}
                   padding={0.4}
                   colors={{ scheme: 'set2' }}
+                  colorBy="group" // <--- FORÇA AS CORES DOS CLUSTERS
                   theme={{
                     text: { fill: '#94a3b8' },
                     axis: { ticks: { text: { fill: '#94a3b8' } } },
-                    grid: { line: { stroke: '#1e293b' } }
+                    grid: { line: { stroke: '#1e293b' } },
+                    // SOBRESCREVE O CSS INLINE DO NIVO PARA O DARK MODE
+                    tooltip: {
+                      container: {
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        fontSize: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #1e293b'
+                      }
+                    }
                   } as any}
                   axisBottom={{ tickSize: 5, tickPadding: 5, tickRotation: 0, legend: 'Clusters', legendPosition: 'middle', legendOffset: 46 }}
                   axisLeft={{ tickSize: 5, tickPadding: 5, tickRotation: 0, legend: variavelBoxplot === 'retorno' ? 'Retorno (%)' : 'Volatilidade (%)', legendPosition: 'middle', legendOffset: -46 }}
