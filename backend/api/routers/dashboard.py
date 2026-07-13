@@ -8,6 +8,7 @@ from core.database import get_db
 from core.logger import logger
 from services.analytics import IndicadoresAnaliticos
 from services.ml import executar_pipeline_kmeans
+from services.macro_eco import MacroeconomiaAPI
 
 # Definição do Router Modular com o prefixo unificado
 router = APIRouter(
@@ -75,6 +76,20 @@ async def serie_temporal_ativos(
         logger.error(f"Falha crítica no endpoint /series: {e}")
         raise HTTPException(status_code=500, detail="Erro interno no cálculo quantitativo da série temporal.")
     
+
+@router.get("/kpis-macro")
+async def kpis_macroeconomicos() -> Dict[str, Any]:
+    """
+    ALIMENTA OS DADOS MACROECONOMICOS:
+    Dados macroeconômicos que ficam no topo da tela (IPCA e SELIC)
+    """
+    try:
+        dados = await MacroeconomiaAPI.get_kpis_gerais()
+        return dados
+    
+    except Exception as e:
+        logger.error(f"Erro no endpoint dos KPIs macroeconomicos")
+        raise HTTPException(status_code=500, detail="Falha de comunicação com o Banco Central")
 
 @router.get("/machine-learning")
 async def analise_avancada_ml(
