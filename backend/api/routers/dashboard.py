@@ -152,14 +152,14 @@ async def analise_qualitativa_ia(
         lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
         analyzer = IndicadoresAnaliticos(session)
         
-        # 1. Coleta a matemática (Usamos apenas as features 2D para economizar tokens na IA)
+        # Coleta a matemática (Usamos apenas as features 2D para economizar tokens na IA)
         dados_quantitativos = await analyzer.get_features_ml(dt_inicio, dt_fim, lista_ativos)
         features_2d = dados_quantitativos.get("features_2d", [])
         
-        # 2. Coleta o cenário Macro
+        # Coleta o cenário Macro
         kpis_macro = await MacroeconomiaAPI.get_kpis_gerais()
 
-        # 3. Despacha para a IA (Como é uma chamada de rede I/O, o ideal é usar asyncio.to_thread para não travar o loop, ou o próprio SDK genai em modo async se disponível. Vamos usar to_thread por segurança).
+        # Despacha para a IA (Como é uma chamada de rede I/O, o ideal é usar asyncio.to_thread para não travar o loop, ou o próprio SDK genai em modo async se disponível. Vamos usar to_thread por segurança).
         ia_service = AnalistaQualitativo()
         loop = asyncio.get_running_loop()
         
@@ -167,7 +167,11 @@ async def analise_qualitativa_ia(
         sintese = await loop.run_in_executor(
             None, 
             ia_service.gerar_sintese, 
-            dt_inicio, dt_fim, features_2d, kpis_macro
+            dt_inicio, 
+            dt_fim, 
+            features_2d, 
+            kpis_macro,
+            lista_ativos
         )
         
         return {"texto_analise": sintese}

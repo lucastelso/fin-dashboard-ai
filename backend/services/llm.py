@@ -56,7 +56,7 @@ class AnalistaQualitativo:
                     temperature=0.2 # Reduzido para maior aderência factual e menor variabilidade
                 )
             )
-            return response.text
+            return response.text if response.text else "O modelo não retornou uma análise válida (possível bloqueio de segurança nos dados)."
             
         except Exception as e:
             logger.error(f"Falha na comunicação com o Gemini: {e}")

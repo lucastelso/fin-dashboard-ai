@@ -13,6 +13,7 @@ scikit-learn
 
 # External Data & LLM
 google-generativeai
+google-genai
 
 # Utilities
 python-dotenv
