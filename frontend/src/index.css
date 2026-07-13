@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Opcional: Uma cor de fundo global agradável para o seu Dashboard */
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
