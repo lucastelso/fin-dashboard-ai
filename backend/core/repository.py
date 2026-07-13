@@ -13,8 +13,7 @@ class BaseMarketRepository:
     retornar como DataFrame Polars. Possui o método `fetch_as_polars` 
     que executa a query SQL e retorna os resultados como um DataFrame Polars.
     Outras classes, como aquela relacionada à construção dos indicadores financeiros 
-    e de machine learning, podem
-      herdar desta classe para reutilizar o método de fetch. 
+    e de machine learning, podem herdar desta classe para reutilizar o método de fetch. 
     """
 
     def __init__(self, session: AsyncSession) -> None:
