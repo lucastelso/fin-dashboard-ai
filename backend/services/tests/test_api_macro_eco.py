@@ -1,7 +1,6 @@
 import sys
 import asyncio
 
-
 sys.path.append("backend")
 
 from services.macro_eco import MacroeconomiaAPI
@@ -27,7 +26,6 @@ async def main():
     
     finally:
         logger.info(f"TESTE FINALIZADO")
-
 
 if __name__ == "__main__":
     asyncio.run(main())
