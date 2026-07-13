@@ -1,7 +1,7 @@
 # backend/api/routers/dashboard.py
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import asyncio
 
 from core.database import get_db
@@ -16,7 +16,7 @@ router = APIRouter(
 )
 @router.get("/resumo")
 async def resumo_mercado(
-    # Usamos 'examples' (plural) com uma lista para alinhar com o Pydantic V2
+    # 'examples' no plural com uma lista para alinhar com o Pydantic V2
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
     session: AsyncSession = Depends(get_db)
@@ -78,23 +78,23 @@ async def serie_temporal_ativos(
 
 @router.get("/machine-learning")
 async def analise_avancada_ml(
-    request: Request, # Acesso ao estado global da aplicação
-    dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-06-01"]),
+    request: Request,
+    dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
-    ativos: List[str] = Query(..., description="Tickers para clusterização", alias="ativos"),
+    ativos: Optional[List[str]] = Query(None, description="Tickers para clusterização. Vazio = Todos", alias="ativos"),
     n_clusters: int = Query(4, description="Quantidade de grupos desejada"),
     session: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Endpoint de Machine Learning (Heavy Compute).
-    Extrai retornos do Postgres/Polars e envia para processamento paralelo 
-    no ProcessPoolExecutor, protegendo o Event Loop do FastAPI.
     """
     try:
-        # I/O Bound: Busca dados no banco e pivota no Polars
+        # A MAGIA DO FALLBACK: Se o usuário não enviou ativos, pegamos a lista completa
+        lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
+
         analyzer = IndicadoresAnaliticos(session)
         matriz_retornos = await analyzer.get_matriz_retornos(
-            dt_inicio=dt_inicio, dt_fim=dt_fim, ativos=ativos
+            dt_inicio=dt_inicio, dt_fim=dt_fim, ativos=lista_ativos
         )
         
         if not matriz_retornos:
@@ -102,9 +102,8 @@ async def analise_avancada_ml(
 
         # Compute Bound: Despacha para um núcleo livre da CPU
         loop = asyncio.get_running_loop()
-        pool = request.app.state.process_pool
+        pool = request.app.state.process_pool 
         
-        # O Event Loop fica LIVRE enquanto o K-Means roda na outra thread/processo!
         resultado_ml = await loop.run_in_executor(
             pool, 
             executar_pipeline_kmeans, 

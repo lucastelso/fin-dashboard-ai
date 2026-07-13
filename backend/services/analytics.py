@@ -8,11 +8,22 @@ sys.path.append("backend")
 from core.repository import BaseMarketRepository
 from core.logger import logger
 
+
 class IndicadoresAnaliticos(BaseMarketRepository):
     """
     Repositório com os métodos relacionados ao Analytics de ativos financeiros.
     Otimizado para municiar Single Page Applications (React) com dados vetorizados.
     """
+    ATIVOS_B3 = [    
+        "PETR4.SA", "PETR3.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", 
+        "BBDC3.SA",  "BBAS3.SA", "ABEV3.SA", "WEGE3.SA", "SUZB3.SA",  
+        "RENT3.SA", "B3SA3.SA", "RADL3.SA", "JBSS3.SA", "BPAC11.SA", 
+        "EQTL3.SA", "VIVT3.SA","RAIL3.SA", "SBSP3.SA", "PRIO3.SA", 
+        "BBSE3.SA", "GGBR4.SA", "UGPA3.SA", "CMIG4.SA", "CSAN3.SA", 
+        "HYPE3.SA", "ENEV3.SA", "TIMS3.SA", "TOTS3.SA", "EGIE3.SA", 
+        "KLBN11.SA", "CSNA3.SA", "ALPA4.SA","IVVB11.SA", "LVOL11.SA", 
+        "DIVO11.SA", "SMAL11.SA", "BOVA11.SA"
+        ]
 
     async def get_resumo_mercado(self, dt_inicio: str, dt_fim: str) -> Dict[str, Any]:
         """
@@ -127,11 +138,10 @@ class IndicadoresAnaliticos(BaseMarketRepository):
 
         return {"dados": df_limpo.to_dicts()}
 
-    async def get_matriz_retornos(self, dt_inicio: str, dt_fim: str, ativos: List[str]) -> Dict[str, List[float]]:
+    async def get_features_ml(self, dt_inicio: str, dt_fim: str, ativos: List[str]) -> Dict[str, Any]:
             """
-            Extrai e pivota os retornos logarítmicos para alimentar modelos de ML.
-            O retorno é um dicionário limpo { 'PETR4.SA': [retornos...], ... } 
-            para que a serialização inter-processos (IPC) seja ultraleve.
+            Gera as Features 2D (Retorno e Risco) para o Scatterplot do K-Means
+            e preserva a matriz de série temporal para a Correlação de Pearson.
             """
             query = """
                 SELECT 
@@ -144,35 +154,33 @@ class IndicadoresAnaliticos(BaseMarketRepository):
                 WHERE p.ativo = ANY(:ativos)
                     AND q.date BETWEEN CAST(:dt_inicio AS TIMESTAMP) AND CAST(:dt_fim AS TIMESTAMP)
             """
-            
             data_start = datetime.strptime(f"{dt_inicio} 00:00:00", "%Y-%m-%d %H:%M:%S")
             data_end = datetime.strptime(f"{dt_fim} 23:59:59", "%Y-%m-%d %H:%M:%S")
 
             df = await self.fetch_as_polars(
-                query, params={
-                    'dt_inicio': data_start, 
-                    'dt_fim': data_end, 'ativos': ativos
-                    }
-                )
+                query, params={'dt_inicio': data_start, 'dt_fim': data_end, 'ativos': ativos}
+            )
 
             if df.is_empty():
                 return {}
 
-            # Calcula o Retorno Logarítmico
             df = df.sort(["ativo", "data"])
+            
+            # Calcula o Retorno Logarítmico
             df = df.with_columns(
                 (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")
             ).drop_nulls()
 
-            # Gira a Tabela (Pivot)
-            # Linhas = Data, Colunas = Ativos, Valores = Retorno
-            df_pivot = df.pivot(values="log_return", index="data", on="ativo")
-            
-            # Dropamos datas onde algum ativo não teve negociação para manter a matriz simétrica
-            df_pivot = df_pivot.drop_nulls()
+            # Features 2D para o K-Means (Risco x Retorno)
+            features_df = df.group_by("ativo").agg([
+                (pl.col("log_return").sum() * 100).round(4).alias("retorno_acumulado"),
+                (pl.col("log_return").std() * 100).round(4).alias("volatilidade")
+            ])
 
-            # Converte para dicionário puro excluindo a coluna de data
-            # Isso gera: {'PETR4.SA': [0.01, -0.02...], 'VALE3.SA': [0.03, 0.01...]}
-            matriz_dict = df_pivot.drop("data").to_dict(as_series=False)
+            # Matriz Dinâmica para a Correlação
+            df_pivot = df.pivot(values="log_return", index="data", on="ativo").fill_null(0.0)
             
-            return matriz_dict
+            return {
+                "features_2d": features_df.to_dicts(),
+                "series_temporais": df_pivot.drop("data").to_dict(as_series=False)
+            }
