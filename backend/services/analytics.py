@@ -72,7 +72,7 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         return {"dados": resumo.to_dicts()}
 
     async def get_serie_temporal_features(
-        self, dt_inicio: str, dt_fim: str, ativos: Union[str, List[str]], janela: int = 20
+        self, dt_inicio: str, dt_fim: str, ativos: Union[str, List[str]], janela: int = 5
     ) -> Dict[str, Any]:
         """
         Alimenta o "Gráfico Principal" do Dashboard.
