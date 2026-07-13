@@ -126,3 +126,53 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))
 
         return {"dados": df_limpo.to_dicts()}
+
+    async def get_matriz_retornos(self, dt_inicio: str, dt_fim: str, ativos: List[str]) -> Dict[str, List[float]]:
+            """
+            Extrai e pivota os retornos logarítmicos para alimentar modelos de ML.
+            O retorno é um dicionário limpo { 'PETR4.SA': [retornos...], ... } 
+            para que a serialização inter-processos (IPC) seja ultraleve.
+            """
+            query = """
+                SELECT 
+                    p.ativo,
+                    q.date as data,
+                    q.close as fechamento
+                FROM dim_ativos as p
+                INNER JOIN series_ativos as q
+                    ON p.id_dim_ativo = q.id_dim_ativo
+                WHERE p.ativo = ANY(:ativos)
+                    AND q.date BETWEEN CAST(:dt_inicio AS TIMESTAMP) AND CAST(:dt_fim AS TIMESTAMP)
+            """
+            
+            data_start = datetime.strptime(f"{dt_inicio} 00:00:00", "%Y-%m-%d %H:%M:%S")
+            data_end = datetime.strptime(f"{dt_fim} 23:59:59", "%Y-%m-%d %H:%M:%S")
+
+            df = await self.fetch_as_polars(
+                query, params={
+                    'dt_inicio': data_start, 
+                    'dt_fim': data_end, 'ativos': ativos
+                    }
+                )
+
+            if df.is_empty():
+                return {}
+
+            # Calcula o Retorno Logarítmico
+            df = df.sort(["ativo", "data"])
+            df = df.with_columns(
+                (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")
+            ).drop_nulls()
+
+            # Gira a Tabela (Pivot)
+            # Linhas = Data, Colunas = Ativos, Valores = Retorno
+            df_pivot = df.pivot(values="log_return", index="data", on="ativo")
+            
+            # Dropamos datas onde algum ativo não teve negociação para manter a matriz simétrica
+            df_pivot = df_pivot.drop_nulls()
+
+            # Converte para dicionário puro excluindo a coluna de data
+            # Isso gera: {'PETR4.SA': [0.01, -0.02...], 'VALE3.SA': [0.03, 0.01...]}
+            matriz_dict = df_pivot.drop("data").to_dict(as_series=False)
+            
+            return matriz_dict
