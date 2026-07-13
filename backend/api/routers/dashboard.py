@@ -89,11 +89,11 @@ async def analise_avancada_ml(
     Endpoint de Machine Learning (Heavy Compute).
     """
     try:
-        # A MAGIA DO FALLBACK: Se o usuário não enviou ativos, pegamos a lista completa
+        # A MAGIA DO FALLBACK: Se o usuário não enviou ativos,, pega a lista completa
         lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
 
         analyzer = IndicadoresAnaliticos(session)
-        matriz_retornos = await analyzer.get_matriz_retornos(
+        matriz_retornos = await analyzer.get_features_ml(
             dt_inicio=dt_inicio, dt_fim=dt_fim, ativos=lista_ativos
         )
         
