@@ -52,7 +52,7 @@ class IndicadoresAnaliticos(BaseMarketRepository):
             pl.col("fechamento").first().alias("preco_inicial"),
             pl.col("fechamento").last().alias("preco_final"),
             # Variação Percentual: ((Preço Final / Preço Inicial) - 1) * 100
-            (((pl.col("fechamento").last() / pl.col("fechamento").first()) - 1) * 100).round(2).alias("variacao_percentual")
+            (((pl.col("fechamento").cast(pl.Float64).last() / pl.col("fechamento").cast(pl.Float64).first()) - 1) * 100).round(2).alias("variacao_percentual")
         ])
 
         # Ordena pelos que mais subiram no período
@@ -104,11 +104,15 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         # usamos o .over("ativo") para garantir que o Polars não misture a média
         # da Petrobras com o preço da Vale.
         df = df.with_columns([
+            
+            # Média Móvel (MA)
+            (pl.col("fechamento").rolling_mean(window_size=janela).over("ativo").alias(f"ma_{janela}")),
+
             # Média Móvel Exponencial (EMA)
             pl.col("fechamento").ewm_mean(span=janela, adjust=False).over("ativo").alias(f"ema_{janela}"),
             
             # Retorno Logarítmico (ln(Pt / Pt-1))
-            (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")
+            (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")            
         ])
 
         # Pipeline Secundário: Volatilidade
@@ -116,6 +120,7 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         df = df.with_columns([
             pl.col("log_return").rolling_std(window_size=janela).over("ativo").alias(f"volatilidade_{janela}")
         ])
+
 
         df_limpo = df.drop_nulls(subset=[f"ema_{janela}", f"volatilidade_{janela}"])
         df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))

@@ -65,7 +65,7 @@ async def serie_temporal_ativos(
         if not resultado['dados']:
             raise HTTPException(status_code=404, detail="Nenhum dado disponível para o(s) ativo(s) selecionado(s).")
             
-        return resultado  # Já segue o contrato {"dados": [...]}
+        return resultado
 
     except HTTPException:
         raise

@@ -179,12 +179,37 @@ class BaseMarketRepository:
 ```
 
 
-
-
-
 #### Backup do bacno de dados
 
 ```bash
 docker exec -t fin_postgres pg_dump -U fin-dashboard-admin -d fin-dashboard-db -F c -f /tmp/db_backup.dump
 docker cp fin_postgres:/tmp/db_backup.dump ./meu_backup_b3.dump
 ```
+
+
+
+
+### Adicionar 
+
+- Juros (t)
+- Taxa SELIC (banco central)
+- Quantidade de ações
+- IPCA (IBGE)
+
+
+
+
+
+### Teoria Moderna do Portfólio (Markowitz)
+
+
+#### sma e ma 
+
+A Média Móvel Simples (SMA) tem memória de elefante: ela dá o exato mesmo peso para o preço de hoje e para o preço de 20 dias atrás. A Exponencial (EMA) tem viés de recência: ela dá muito mais peso ao que as pessoas estão fazendo agora.
+
+Se o mercado está lateralizado (andando de lado) ou subindo em uma escadinha perfeitamente constante, a SMA e a EMA vão se abraçar no gráfico. A EMA só vai descolar agressivamente da SMA no momento em que ocorrer um choque exógeno (ex: uma notícia política que faz a ação despencar num único dia). A EMA afunda rápido, a SMA demora a reagir.
+
+
+#### log_return
+
+ Se uma ação cai 50% num dia (de 100 para 50), no dia seguinte ela precisa subir 100% (de 50 para 100) só para você voltar ao zero a zero. A matemática simples não fecha a conta.O logaritmo natural resolve isso criando uma simetria perfeita e aditividade no tempo. O retorno logarítmico é definido como:$$R_t = \ln\left(\frac{P_t}{P_{t-1}}\right)$$Se a ação dobra de valor, $R_t \approx +0.69$. Se ela perde metade do valor, $R_t \approx -0.69$. Além disso, retornos logarítmicos se aproximam de uma Distribuição Normal (Curva de Gauss), o que é um pré-requisito estrito para a maioria dos algoritmos estatísticos e de Machine Learning funcionarem corretamente sem viés.
