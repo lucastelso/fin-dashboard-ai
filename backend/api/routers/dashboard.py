@@ -1,11 +1,13 @@
 # backend/api/routers/dashboard.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, List
+import asyncio
 
 from core.database import get_db
 from core.logger import logger
 from services.analytics import IndicadoresAnaliticos
+from services.ml import executar_pipeline_kmeans
 
 # Definição do Router Modular com o prefixo unificado
 router = APIRouter(
@@ -72,3 +74,48 @@ async def serie_temporal_ativos(
     except Exception as e:
         logger.error(f"Falha crítica no endpoint /series: {e}")
         raise HTTPException(status_code=500, detail="Erro interno no cálculo quantitativo da série temporal.")
+    
+
+@router.get("/machine-learning")
+async def analise_avancada_ml(
+    request: Request, # Acesso ao estado global da aplicação
+    dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-06-01"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    ativos: List[str] = Query(..., description="Tickers para clusterização", alias="ativos"),
+    n_clusters: int = Query(4, description="Quantidade de grupos desejada"),
+    session: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Endpoint de Machine Learning (Heavy Compute).
+    Extrai retornos do Postgres/Polars e envia para processamento paralelo 
+    no ProcessPoolExecutor, protegendo o Event Loop do FastAPI.
+    """
+    try:
+        # I/O Bound: Busca dados no banco e pivota no Polars
+        analyzer = IndicadoresAnaliticos(session)
+        matriz_retornos = await analyzer.get_matriz_retornos(
+            dt_inicio=dt_inicio, dt_fim=dt_fim, ativos=ativos
+        )
+        
+        if not matriz_retornos:
+            raise HTTPException(status_code=404, detail="Sem dados suficientes para análise.")
+
+        # Compute Bound: Despacha para um núcleo livre da CPU
+        loop = asyncio.get_running_loop()
+        pool = request.app.state.process_pool
+        
+        # O Event Loop fica LIVRE enquanto o K-Means roda na outra thread/processo!
+        resultado_ml = await loop.run_in_executor(
+            pool, 
+            executar_pipeline_kmeans, 
+            matriz_retornos, 
+            n_clusters
+        )
+        
+        return resultado_ml
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro catastrófico no pipeline de ML: {e}")
+        raise HTTPException(status_code=500, detail="Falha no modelo de Machine Learning.")

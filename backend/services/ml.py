@@ -7,7 +7,7 @@ import warnings
 # Ignora warnings do scikit-learn sobre vazamento de memória em Windows
 warnings.filterwarnings("ignore")
 
-def executar_pipeline_quant(matriz_retornos: Dict[str, list], n_clusters: int = 4) -> Dict[str, Any]:
+def executar_pipeline_kmeans(matriz_retornos: Dict[str, list], n_clusters: int = 4) -> Dict[str, Any]:
     """
     Função Compute-Bound isolada. 
     Recebe as séries de retornos e devolve os clusters e a matriz de correlação.
