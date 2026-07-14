@@ -3,6 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { Activity, TrendingUp, BarChart3, BrainCircuit, Loader2, Search } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 const DICIONARIO_ATIVOS: Record<string, string> = {
   "PETR4.SA": "Petrobras PN", "PETR3.SA": "Petrobras ON", "VALE3.SA": "Vale ON",
@@ -70,17 +75,26 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
     );
   }) || [];
 
+  // INJEÇÃO MATEMÁTICA: Cálculo do Juro Real ex-post (Equação de Fisher)
+  const selicDecimal = kpiData?.selic ? kpiData.selic / 100 : 0;
+  const ipcaDecimal = kpiData?.ipca ? kpiData.ipca / 100 : 0;
+  const juroReal = kpiData ? (((1 + selicDecimal) / (1 + ipcaDecimal)) - 1) * 100 : 0;
+
   return (
     <div className="space-y-6">
-      {/* KPIs Macro */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* KPIs Macro (Expandido para 4 colunas) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
           <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><Activity className="w-6 h-6" /></div>
           <div><p className="text-sm font-medium text-slate-400">Taxa Selic Meta</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${kpiData.selic}%` : '...'}</h3></div>
         </div>
         <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
           <div className="p-3 bg-rose-500/10 text-rose-400 rounded-lg"><TrendingUp className="w-6 h-6" /></div>
-          <div><p className="text-sm font-medium text-slate-400">IPCA (12m)</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${kpiData.ipca}%` : '...'}</h3></div>
+          <div><p className="text-sm font-medium text-slate-400">Inflação (IPCA 12m)</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${kpiData.ipca}%` : '...'}</h3></div>
+        </div>
+        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
+          <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg"><Activity className="w-6 h-6" /></div>
+          <div><p className="text-sm font-medium text-slate-400">Juro Real (Prêmio de Risco)</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${juroReal.toFixed(2)}%` : '...'}</h3></div>
         </div>
         <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
           <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><BarChart3 className="w-6 h-6" /></div>
@@ -186,9 +200,16 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
         <div className="bg-slate-950 rounded-lg p-5 border border-slate-800 min-h-[120px]">
           {iaLoading ? (
              <p className="text-slate-400">Processando cruzamento de dados com eventos recentes do mercado...</p>
-          ) : iaData ? (
-            <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{iaData}</div>
-          ) : (
+        ) : iaData ? (
+            <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+              >
+                {iaData}
+              </ReactMarkdown>
+            </div>
+        ) : (
             <p className="text-slate-500 italic text-sm">Clique no botão para cruzar a matemática do ativo com notícias em tempo real.</p>
           )}
         </div>

@@ -21,7 +21,7 @@ class AnalistaQualitativo:
 
         # Prompt de Engenharia Quantitativa rigoroso e denso
         prompt = f"""
-        Atue como um Analista Quantitativo e Estrategista de Alocação sênior.
+        Atue como um Analista de Mercado e Estrategista de Alocação sênior.
         Analise estritamente os seguintes dados financeiros consolidados de {dt_inicio} a {dt_fim}:
 
         KPIs Macroeconômicos Globais:
