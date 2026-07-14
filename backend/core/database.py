@@ -1,4 +1,3 @@
-# backend/core/database.py
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.engine import URL 
 from dotenv import load_dotenv
@@ -15,7 +14,7 @@ DB_USER = os.getenv("POSTGRES_USER")
 DB_PASS = os.getenv("POSTGRES_PASSWORD")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("POSTGRES_DB")
-DB_HOST = os.getenv("DB_HOST", "postgres_db")  # Nome do serviço no docker-compose.yml
+DB_HOST = os.getenv("DB_HOST", "postgres_db")
 
 def is_running_in_docker() -> bool:
     return os.path.exists('/.dockerenv')
@@ -51,7 +50,6 @@ engine = create_async_engine(
         # Timeout para estabelecer a conexão com o banco (se ele cair, falha rápido em vez de travar)
         "timeout": 10.0, 
         
-        # O "Kill Switch" para queries analíticas pesadas. 
         # Nenhuma transação pode passar de 60 segundos. 
         # Acima disso, o asyncpg cancela a operação e libera o worker do FastAPI.
         "command_timeout": 60.0 

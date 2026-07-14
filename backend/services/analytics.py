@@ -47,7 +47,6 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         if df.is_empty():
             return {"dados": []}
 
-        # ORDENA E AGRUPA NO POLARS
         df = df.sort(["ativo", "data"])
 
         # FEATURE ENGINEERING VETORIZADA: Pega o primeiro e o último preço do período filtrado
@@ -58,7 +57,6 @@ class IndicadoresAnaliticos(BaseMarketRepository):
             (((pl.col("fechamento").cast(pl.Float64).last() / pl.col("fechamento").cast(pl.Float64).first()) - 1) * 100).round(2).alias("variacao_percentual")
         ])
 
-        # Ordena pelos que mais subiram no período
         resumo = resumo.sort("variacao_percentual", descending=True)
 
         return {"dados": resumo.to_dicts()}
@@ -99,13 +97,9 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         if df.is_empty():
             return {"dados": []}
 
-        # ORDENAÇÃO POR ATIVO E DATA
         df = df.sort(["ativo", "data"])
 
-        # FEATURE ENGINEERING COM OVER()
-        # Como podemos ter vários ativos no mesmo DataFrame (ex: PETR4 e VALE3),
-        # usamos o .over("ativo") para garantir que o Polars não misture a média
-        # da Petrobras com o preço da Vale.
+        # usamos o .over("ativo") para garantir que o Polars não misture as coisas
         df = df.with_columns([
             
             # Média Móvel (MA)

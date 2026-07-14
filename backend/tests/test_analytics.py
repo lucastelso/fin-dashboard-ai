@@ -1,4 +1,3 @@
-# backend/tests/test_analytics.py (ou onde você salvou)
 import sys 
 import asyncio
 

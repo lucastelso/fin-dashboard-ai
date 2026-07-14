@@ -1,4 +1,3 @@
-# backend/services/db_repository.py
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
@@ -27,10 +26,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         return
 
     try:
-        # ==========================================
         # ETAPA 1: ALIMENTAR A TABELA DIMENSÃO
-        # ==========================================
-        # Extrai os tickers únicos do lote atual
         unique_tickers = df["ticker"].unique().to_list()
         
         # Prepara a inserção na dimensão ignorando conflitos (se o ticker já existe, nada acontece)
@@ -40,9 +36,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         
         await session.execute(dim_stmt)
         
-        # ==========================================
         # ETAPA 2: LOOKUP DAS SURROGATE KEYS
-        # ==========================================
         # Busca no banco os IDs inteiros (id_dim_ativo) correspondentes aos nossos tickers
         query = select(DimensaoAtivos.id_dim_ativo, DimensaoAtivos.ativo).where(
             DimensaoAtivos.ativo.in_(unique_tickers)
@@ -52,9 +46,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         # Monta um dicionário de mapeamento em memória: {'PETR4.SA': 1, 'VALE3.SA': 2}
         ticker_to_id = {row.ativo: row.id_dim_ativo for row in result.all()}
         
-        # ==========================================
         # ETAPA 3: TRANSFORMAÇÃO VETORIZADA NO POLARS
-        # ==========================================
         # Usamos o Polars para fazer o mapeamento (Join/Replace) extremamente rápido na memória C/Rust
         # Criamos um DataFrame temporário com o dicionário de chaves
         mapping_df = pl.DataFrame({
@@ -68,9 +60,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         # Converte para dicionários nativos para o SQLAlchemy
         fact_records = df_mapped.to_dicts()
 
-        # ==========================================
         # ETAPA 4: UPSERT NA TABELA FATO
-        # ==========================================
         batch_size = 1000
         
         # df_mapped.iter_slices() retorna views do DataFrame sem copiar a memória
@@ -97,7 +87,6 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
             # tudo será cancelado, preservando a integridade.
             await session.execute(upsert_stmt)
             
-        # O Commit consolida a inserção massiva na dimensão e na fato
         await session.commit()
         logger.info(f"Sucesso: {df.height} registros inseridos/atualizados em blocos de {batch_size}.")
 

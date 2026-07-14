@@ -1,4 +1,3 @@
-# backend/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter
 import concurrent.futures
@@ -9,8 +8,6 @@ from core.logger import logger
 from core.database import engine
 from models.market import Base
 from api.routers.dashboard import router as dashboard_router
-
-# from api.routers import market 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,7 +53,6 @@ async def greetings():
         "Greetings": "BOAS VINDAS AO ENDPOINT DO DASHBOARD FINANCEIRO INTELIGENTE"
     }
 
-# As rotas agora são penduradas no api_router, e não mais no app diretamente
 @api_router.get("/health", tags=["Infraestrutura"])
 async def health_check():
     return {
@@ -67,7 +63,5 @@ async def health_check():
 # super-árvore de rotas na aplicação principal
 api_router.include_router(dashboard_router)
 
-# Por fim, o app engole a árvore inteira
+# Routers
 app.include_router(api_router)
-# rota do dashboard
-# roda do ml

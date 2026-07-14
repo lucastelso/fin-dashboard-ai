@@ -1,4 +1,3 @@
-# backend/services/macro.py
 import httpx
 from typing import Dict, Any
 from core.logger import logger

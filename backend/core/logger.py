@@ -10,7 +10,6 @@ class CustomFormatter(logging.Formatter):
     cyan = "\x1b[36;20m"
     reset = "\x1b[0m"
     
-    # Formato limpo e informativo: Timestamp [NÍVEL] (Arquivo:Linha) -> Mensagem
     log_format = "%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) -> %(message)s"
 
     FORMATS = {
@@ -43,5 +42,4 @@ def get_logger(name: str = __name__) -> logging.Logger:
         
     return logger
 
-# Instancia o logger principal
 logger = get_logger("FINANCE-AI")

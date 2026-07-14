@@ -19,7 +19,6 @@ def executar_pipeline_kmeans(dados_quant: Dict[str, Any], n_clusters: int = 4) -
 
     ativos = [f["ativo"] for f in features]
     
-    # Monta a matriz X 2D: [Retorno, Volatilidade]
     X_kmeans = np.array([[f["retorno_acumulado"], f["volatilidade"]] for f in features])
     
     # K-MEANS + MÉTRICAS
@@ -35,12 +34,11 @@ def executar_pipeline_kmeans(dados_quant: Dict[str, Any], n_clusters: int = 4) -
     for i, ativo in enumerate(ativos):
         scatterplot_data.append({
             "id": ativo,
-            "x": features[i]["volatilidade"],    # Eixo X
-            "y": features[i]["retorno_acumulado"], # Eixo Y
+            "x": features[i]["volatilidade"],
+            "y": features[i]["retorno_acumulado"],
             "cluster": f"Grupo {labels[i]}"
         })
 
-    # CORRELAÇÃO
     # Matriz para a correlação cruzada de comportamento
     X_corr = np.array([series[ativo] for ativo in ativos])
     corr_matrix = np.corrcoef(X_corr)
@@ -60,6 +58,6 @@ def executar_pipeline_kmeans(dados_quant: Dict[str, Any], n_clusters: int = 4) -
             "qtd_grupos": n_clusters,
             "qtd_ativos": len(ativos)
         },
-        "scatterplot": scatterplot_data, # Alimenta o gráfico da esquerda e o boxplot da direita
-        "correlacao": correlacao_data    # Matriz extra
+        "scatterplot": scatterplot_data,
+        "correlacao": correlacao_data
     }

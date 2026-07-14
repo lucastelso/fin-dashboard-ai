@@ -1,4 +1,3 @@
-# backend/services/scheduler.py
 import asyncio
 from datetime import datetime, timezone, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -30,7 +29,6 @@ TICKERS_B3 = [
     "EZTC3.SA", "FLRY3.SA", "GOAU4.SA", "HAPV3.SA", "IRBR3.SA", "ITSA4.SA", 
     "LREN3.SA", "MGLU3.SA", "MRVE3.SA", "MULT3.SA", "NTCO3.SA", "SANB11.SA", 
     "TAEE11.SA", "USIM5.SA", "VBBR3.SA"
-    # Pode adicionar até 100 aqui sem medo
 ]
 
 

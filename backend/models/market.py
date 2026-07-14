@@ -22,7 +22,6 @@ class DimensaoAtivos(Base):
 
     id_dim_ativo: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ativo: Mapped[str] = mapped_column(String(9), nullable=False)
-    # fonte: Mapped[int] = mapped_column(Integer, server_default="0") 
 
     # Relacionamento no ORM (puramente para Python, não afeta o banco)
     extractions: Mapped[list["SeriesAtivos"]] = relationship(
