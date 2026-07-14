@@ -12,7 +12,6 @@ from services.macro_eco import MacroeconomiaAPI
 from services.llm import AnalistaQualitativo
 from services.macro_eco import MacroeconomiaAPI
 
-# Definição do Router Modular com o prefixo unificado
 router = APIRouter(
     prefix="/dashboard-ativos", 
     tags=['Analytics & Dashboard']
@@ -106,7 +105,6 @@ async def analise_avancada_ml(
     Endpoint de Machine Learning (Heavy Compute).
     """
     try:
-        # A MAGIA DO FALLBACK: Se o usuário não enviou ativos,, pega a lista completa
         lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
 
         analyzer = IndicadoresAnaliticos(session)
@@ -117,7 +115,6 @@ async def analise_avancada_ml(
         if not matriz_retornos:
             raise HTTPException(status_code=404, detail="Sem dados suficientes para análise.")
 
-        # Compute Bound: Despacha para um núcleo livre da CPU
         loop = asyncio.get_running_loop()
         pool = request.app.state.process_pool 
         
@@ -152,18 +149,14 @@ async def analise_qualitativa_ia(
         lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3
         analyzer = IndicadoresAnaliticos(session)
         
-        # Coleta a matemática (Usamos apenas as features 2D para economizar tokens na IA)
         dados_quantitativos = await analyzer.get_features_ml(dt_inicio, dt_fim, lista_ativos)
         features_2d = dados_quantitativos.get("features_2d", [])
         
-        # Coleta o cenário Macro
         kpis_macro = await MacroeconomiaAPI.get_kpis_gerais()
 
-        # Despacha para a IA (Como é uma chamada de rede I/O, o ideal é usar asyncio.to_thread para não travar o loop, ou o próprio SDK genai em modo async se disponível. Vamos usar to_thread por segurança).
         ia_service = AnalistaQualitativo()
         loop = asyncio.get_running_loop()
         
-        # Roda a chamada da API do Gemini de forma segura
         sintese = await loop.run_in_executor(
             None, 
             ia_service.gerar_sintese, 
