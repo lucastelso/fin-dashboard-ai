@@ -33,7 +33,7 @@ A filosofia central do projeto baseia-se em **Resiliência e Desempenho**:
 
 ### Frontend (Interface de Usuário)
 
-* **Linguagem:** TypeScript
+* **Linguagem:** TypeScript (com muito auxílio do _Gemini_ para compensar a falta de conhecimento de frontend do autor)
 * **Framework:** React 19 executado sobre o *bundler* Vite.
 * **Estilização:** Tailwind CSS v4.
 * **Gerenciamento de Estado de Servidor:** TanStack React Query v5 (Cache dinâmico e revalidação de dados).
