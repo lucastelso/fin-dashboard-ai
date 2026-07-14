@@ -1,237 +1,163 @@
-# APP FINANCEIRO INTELIGENTE
 
-Esse aplicativo foi desenvolvido com o objetivo de permitir o acompanhamento da ativos de renda variável e com a possibilidade:
+---
+# Documentação Técnica - Dashboard Financeiro Inteligente
 
-- Permanencia de preços em banco de dados próprios;
-- Análise de preços com modelos de séries temporais
-- Análise do comportamento conjunto de ações e oportunidades de diversificação com k-means++
-- Análise de conjuntura econômica com inteligência artificial generativa
+## 1. Filosofia Arquitetural e Design de Sistema
 
+O **Dashboard Financeiro Inteligente** é um projeto desenvolvido por Lucas Valoz Castellucci com a finalidade de unir Ciência de Dados e Engenharia de Software para oferecer um Dashboard interativo dos principais ativos financeiros da B3, com possibilidade de análise quantitativa, via análise de médias móveis exponenciais, variação percentual, avaliação de risco e retorno por investimento, e qualitativa, via integração com o Grande Modelo de Língua (LLM): _Google Gemini_.
 
-## ROADMAP
 
-O Roadmap de DesenvolvimentoA ordem aqui é crítica. Construir a interface antes de garantir a ingestão dos dados gera um retrabalho enorme de tipagem e contratos de API.
+O **Dashboard Financeiro Inteligente** foi concebido sob os preceitos que unem, em sua arquitetura de software, a separação estrita de responsabilidades (*Separation of Concerns*), isolando a camada de apresentação (SPA React), a camada de roteamento HTTP (FastAPI) e os motores de processamento analítico (Polars e Scikit-Learn).
 
-### 1. Fundação e Ingestão de Dados:
 
-Foco: Garantir que os dados cheguem com qualidade.Criação do ambiente virtual com UV. Estruturação do repositório. Desenvolvimento dos scripts assíncronos que farão o fetch diário (OHLCV) de APIs gratuitas (como yfinance) e salvarão em DataFrames do Polars para validação de tipagem e dados nulos.
+A filosofia central do projeto baseia-se em **Resiliência e Desempenho**:
 
-### 2. Persistência e Modelagem (PostgreSQL):
+* **Processamento Assíncrono (Async I/O):** Toda a comunicação de rede (ingestão do Yahoo Finance, consultas ao PostgreSQL, chamadas à API do Gemini) é estritamente não-bloqueante, garantindo que o *Event Loop* do servidor nunca congele durante requisições pesadas.
 
-Foco: Desenhar o esquema do banco.Configuração do container Docker do PostgreSQL. Criação dos modelos declarativos no SQLAlchemy e configuração do asyncpg. Uso do Alembic para gerenciar as migrações do banco. Inserção dos dados processados pelo Polars nas tabelas do banco.
+* **Vetorização de Dados:** O processamento de séries temporais abandona iteradores e a biblioteca Pandas em favor do **Polars**, utilizando execução *multithreaded* em Rust para agregações e cálculos complexos em milissegundos.
 
-### 3. Motor Analítico (Quant & ML):
+* **Degradação Suave (*Graceful Degradation*) e *Exponential Backoff*:** Microsserviços dependentes de cotas externas (como APIs de LLMs) implementam lógicas de recuo exponencial e *fallback* (como *web scraping* nativo) para garantir que o sistema central continue operando mesmo sob falhas ou *Rate Limits* de provedores terceiros.
 
-Foco: K-means e Estatística.Criação dos endpoints no FastAPI que puxam o histórico do banco de dados para o Polars. Implementação do algoritmo K-means no backend (usando scikit-learn interligado ao Polars) para clusterizar os ativos baseados nos retornos logarítmicos diários.
+## 2. Stack Tecnológica
 
-### 4. Integração Qualitativa (Gemini API):
+### Backend (Processamento e API)
 
-Foco: O diferencial do seu projeto.Criação de um serviço que detecta variações de preço superiores a um desvio padrão ($\pm 2\sigma$). Para essas anomalias, o backend dispara um prompt estruturado para o Gemini via API pedindo o contexto das notícias daquele dia, e salva a string de resposta no banco, vinculada ao ticker e à data.
+* **Linguagem:** Python 3.11
+* **Framework Web:** FastAPI (ASGI)
+* **Motor de Dados:** Polars (Manipulação de DataFrames de alta performance com multithread)
+* **Machine Learning:** Scikit-Learn (K-Means Clustering, Silhouette Score)
+* **ORM e Banco de Dados:** SQLAlchemy 2.0 (Assíncrono com Asyncpg) integrado ao PostgreSQL.
+* **Integração de IA:** Google GenAI SDK (Gemini 3.5 Flash) com injeção de contexto via RSS web scraping.
+* **Agendador de Tarefas:** APScheduler (Cron jobs assíncronos).
+* **Requisições HTTP:** httpx (Cliente assíncrono).
 
-### 5. Desenvolvimento da API Restful:
+### Frontend (Interface de Usuário)
 
-Foco: Fechar o contrato de dados.Finalização dos routers do FastAPI. Implementação de rotas assíncronas limpas retornando JSONs estritos (validados pelo Pydantic) para o Frontend consumir (ex: /api/v1/assets/clusters, /api/v1/assets/{ticker}/insights).
+* **Linguagem:** TypeScript
+* **Framework:** React 19 executado sobre o *bundler* Vite.
+* **Estilização:** Tailwind CSS v4.
+* **Gerenciamento de Estado de Servidor:** TanStack React Query v5 (Cache dinâmico e revalidação de dados).
+* **Visualização de Dados:** * Recharts (Séries Temporais).
+* Nivo (Scatterplot e Boxplot com injeção de SVGs matemáticos customizados).
+* **Renderização de Texto:** React-Markdown com suporte a tipografia matemática via KaTeX (`rehype-katex`, `remark-math`).
 
-### 6. Frontend Frontal (React + Vite):
 
-Foco: Consumo e UI/UX.Criação do projeto React. Configuração do Axios/Fetch para consumir sua API. Implementação de gráficos de linha/candlestick e painéis laterais mostrando os "Insights da IA" e os clusters de ativos.
+### Banco de Dados
 
-### 7. Orquestração (Docker Compose):
+* **PostgreSQL 17** (containerizado em Alpine Linux)
 
-Foco: Deploy e DevOps.Empacotamento do backend, frontend e banco de dados em um docker-compose.yml unificado. Configuração de redes internas para que os containers conversem entre si com segurança e isolamento.
+### Infraestrutura e DevOps
 
-## Estrutura geral do repositorio
+* **Containerização:** Docker e Docker Compose.
+* **Servidor Web / Proxy Reverso:** Nginx.
+---
 
-```plaintext
-fin-dashboard-project/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # Routers do FastAPI (endpoints)
-│   │   ├── core/         # Configurações, segurança, instâncias de banco
-│   │   ├── models/       # SQLAlchemy models (Tabelas)
-│   │   ├── schemas/      # Pydantic models (Validação de I/O)
-│   │   ├── services/     # Regras de negócio (Polars, Gemini, K-means)
-│   │   └── main.py       # Ponto de entrada do FastAPI
-│   ├── alembic/          # Migrações do banco
-│   ├── requirements.in   # Dependências abertas
-│   ├── requirements.txt  # Dependências lockadas pelo UV
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/     # Chamadas para a sua API FastAPI
-│   │   └── App.jsx
-│   ├── package.json
-│   ├── vite.config.js
-│   └── Dockerfile
-└── docker-compose.yml    # Orquestra Postgres, Backend e Frontend
-```
+## 3. Estrutura de Diretórios e Componentes
 
+### 3.1. Diretório `backend/`
 
-### Passo 1 - Levantamento de requisitos e ambiente
+Responsável por toda a lógica de negócios, acesso a dados e roteamento.
 
-Para implementar o prjeot, é necessário termos biblioteca web i/o e async, de machine learning, banco de dados, sql, api do yahoo finance e a api do gemini. 
+#### `api/routers/`
 
-Nós vamos coletar os dados da API do yahoo, mas não vamos utilizar yfinance, pois ele retorna uma série do pandas. Vamos evitar o pandas pois ele é single thread e bem mais lento e pesado do que o polars.
+* `dashboard.py`: Router principal do sistema. Expõe os *endpoints* consumidos pelo *frontend*. Orquestra a injeção de dependências e delega o processamento pesado aos serviços competentes, garantindo que a camada HTTP permaneça limpa e focada em I/O. Herda dependências do FastAPI de `main.py`
 
-```.txt
-# Web Framework & Async I/O
-fastapi
-uvicorn[standard]
+#### `core/`
 
-# Database & ORM
-sqlalchemy
-asyncpg
-alembic
+* `database.py`: Instanciação da *Engine* assíncrona do SQLAlchemy e configuração da fábrica de sessões (`AsyncSessionLocal`). Acessos ao banco de dados devem importar esse objeto e usá-lo com: `async with`
 
-# Data Processing & ML
-polars
-scikit-learn
+* `logger.py`: Configuração unificada do log do sistema, padronizando a saída (stdout) para facilidade de auditoria e monitoramento em *containers*.
 
-# External Data & LLM
-google-generativeai
+* `repository.py`: Padrão de repositório (*Repository Pattern*) que abstrai as queries SQL brutas, permitindo operações CRUD no banco de dados de forma desacoplada da Lógica de negócios. Possui o método `fetch_as_polars`, que padroniza a forma de manipular e disponibilizar os dados da query para o endpoint.
 
-# Utilities
-python-dotenv
-httpx
-```
+#### `models/`
 
+* `market.py`: Modelos declarativos do SQLAlchemy. Define o esquema rigoroso das tabelas do banco de dados relacional (PostgreSQL), mapeando tipos SQL para tipos Python.
 
-### Passo 2 - 
-
-Criamos a conexão do banco de dados, as tabelas 
-
-```
-backend/
-├── core/
-│   └── database.py       # Gerenciamento da conexão e engine assíncrona
-├── models/
-│   └── market.py         # O mapeamento Declarativo (Tabelas)
-└── services/
-    ├── fetch_yahoo.py    # Coleta dos dados direto a API do Yahoo
-    └── db_repository.py  # Funções de interação com o banco (Upsert)
-
-```
-
-### Passo 3 - Inserir os dados no banco 
-
-A forma padrão de inserir os dados no banco de dados utilizando a nossa engine deve ser a seguinte:
-
-```python
-async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            
-        logger.info("Iniciando transação de persistência assíncrona...")
-        async with AsyncSessionLocal() as session:
-            await upsert_asset_prices(session, master_df)
-```
+#### `schemas/`
 
-### Passo 4 - Criando uma classe de repositório
+* `market.py`: Contratos de validação do Pydantic. Assegura que todos os dados que entram (requisições) e saem (respostas JSON) da API estejam rigorosamente tipados, prevenindo erros em tempo de execução.
 
-A Engine é uma fábrica de conexões global. Se você atrelar a classe à Engine, você quebra o ciclo de vida transacional (ACID). No FastAPI, usamos o princípio da Injeção de Dependência (Dependency Injection). O FastAPI abre uma Session quando o usuário faz a requisição (ex: clica no gráfico), passa essa sessão viva para a sua classe, a classe busca os dados, e o FastAPI fecha a sessão ao devolver a resposta. Isso evita vazamento de memória e deadlocks no banco
+#### `services/`
 
-```python
-# backend/repositories/base.py
-import asyncio
-from typing import Any
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-import polars as pl
-from core.logger import logger
+A camada mais densa do sistema, contendo as regras de negócio e a matemática.
 
-class BaseMarketRepository:
-    """
-    Classe Abstrata de repositório focada em performance bruta.
-    Garante Injeção de Dependência da sessão assíncrona do FastAPI.
-    Ela é a classe responsável por buscar dados do banco de dados e 
-    retornar como DataFrame Polars. Possui o método `fetch_as_polars` 
-    que executa a query SQL e retorna os resultados como um DataFrame Polars.
-    Outras classes, como aquela relacionada à construção dos indicadores financeiros 
-    e de machine learning, podem herdar desta classe para reutilizar o método de fetch. 
-    """
+* `analytics.py`: Motor de agregações. Converte registros do banco para `Polars DataFrame`, trata dados ausentes (*drop_nulls*) e calcula métricas como log-retorno, volatilidade estatística e Média Móvel Exponencial (EMA).
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+* `db_upsert.py`: Lógica de persistência. Gerencia o comando `INSERT ON CONFLICT DO UPDATE` (Upsert), garantindo que a ingestão de preços intradiários não crie duplicatas de chave primária (*timestamp* + *ticker*).
 
-    async def fetch_as_polars(
-            self, 
-            query_sql: str, 
-            params: dict[str, Any] | None = None
-        ) -> pl.DataFrame:
-        """
-        Executa SQL parametrizado assincronamente e vetoriza o resultado 
-        para a memória C/Rust do Polars evitando o gargalo do SQLAlchemy ORM.
-        Recebe uma lista de tuplas (linhas) e uma lista de nomes de colunas, 
-        e constrói um DataFrame Polars, de modo a se restringir aos tipos
-        nativos do python (muito mais eficiente).
+* `fetch_yahoo.py`: Cliente de extração de dados brutos. Conecta-se à API V8 (Chart) do Yahoo Finance utilizando chamadas HTTP assíncronas e estruturando os retornos JSON em listas de dicionários padronizadas, considerando as idiossincrasias do *Call de Fechamento* da B3.
 
-        ### Parâmetros
-        - `query_sql`: A query SQL a ser executada.
-        - `params`: Dicionário de parâmetros para a query SQL.
+* `llm.py`: Conexão com o Grande Modelo de Língua (LLM) que vai gerar a análise qualitativa. Contém a classe `AnalistaQualitativo`. Emprega engenharia de *prompts* estritos. Implementa captura de notícias em tempo real via RSS (evitando bloqueios do *Google Grounding*) e gerencia *Rate Limits* através de algoritmos de *Exponential Backoff*.
 
-        ### Retorna
-        - Retorna um DataFrame Polars com os resultados da query.
+* `macro_eco.py`: Serviço de comunicação com APIs governamentais (como o Banco Central do Brasil) para extração da meta da Taxa Selic e do IPCA acumulado (12 meses).
 
-        """
-        try:
-            # 1. I/O Bound: Requisição de rede 100% não-bloqueante
-            result = await self.session.execute(text(query_sql), params or {})
-            
-            columns = list(result.keys())
-            raw_rows = result.fetchall()
+* `ml.py`: Algoritmos de Machine Learning não-supervisionado. Aplica Padronização (`StandardScaler`) aos dados de risco-retorno e executa o algoritmo *K-Means* dinamicamente. Calcula o *Silhouette Score* para aferir a qualidade da separação topológica dos *clusters*. Adicionalmente constrói a Matriz de Correlação de Pearson da carteira.
 
-            if not raw_rows:
-                logger.warning("Query retornou vazia. Instanciando Polars vazio.")
-                return pl.DataFrame(schema=columns)
+* `scheduler.py`: Motor de rotinas autônomas. Configura a arquitetura *Cron* do APScheduler para disparar o `fetch_yahoo.py` a cada 15 minutos, respeitando o fuso horário da B3 e aplicando o padrão *Semaphore* (limitação de concorrência) para evitar bloqueio de IP.
 
-            # 2. CPU Bound: Isolamento da thread principal
-            def _build_dataframe(rows, cols):
-                pure_tuples = list(map(tuple, rows))
-                return pl.DataFrame(pure_tuples, schema=cols, orient="row")
+#### Raiz do Backend
 
-            df = await asyncio.to_thread(_build_dataframe, raw_rows, columns)
-            return df
-            
-        except Exception as e:
-            logger.error(f"Falha na extração vetorizada: {e}")
-            raise e
-```
+* `main.py`: O ponto de entrada da aplicação (`Entrypoint`). Inicializa o *FastAPI*, gerencia os eventos de ciclo de vida (*startup/shutdown*) acionando o *scheduler* e o `ProcessPoolExecutor` para taferas computacionalmente intensas
 
+* `Dockerfile`: Declaração de imagem baseada em Python *slim*, gerenciando a instalação segura do ecossistema e definindo o servidor Uvicorn.
 
-#### Backup do bacno de dados
+* `requirements.in` / `requirements.txt`: Rastreabilidade determinística de dependências Python com uv pip, para garantir versões de dependências e das dependências das dependências.
 
-```bash
-docker exec -t fin_postgres pg_dump -U fin-dashboard-admin -d fin-dashboard-db -F c -f /tmp/db_backup.dump
-docker cp fin_postgres:/tmp/db_backup.dump ./meu_backup_b3.dump
-```
+### 3.2. Diretório `frontend/`
 
+A aplicação *Single Page Application* reativa.
 
+#### `src/pages/`
 
+* `DashboardMacro.tsx`: Tela inicial. Consolida os KPIs macroeconômicos e realiza o cálculo matemático contínuo da Equação de Fisher em memória RAM para obtenção do Juro Real ($Juro Real = \left( \frac{1 + i}{1 + \pi} \right) - 1$). Inclui a barra de pesquisa rápida por *regex*/filtro e o gráfico paramétrico da Média Móvel Exponencial (Recharts). Também renderiza a resposta da IA (LLM) utilizando motores de conversão Markdown/LaTeX.
 
-### Adicionar 
+* `DashboardML.tsx`: Painel de inteligência quantitativa. Expõe hiperparâmetros ajustáveis para o *K-Means*. Utiliza o Nivo para a plotagem do espaço bidimensional Risco vs. Retorno, implementando uma camada customizada SVG (`EllipseLayer`) que calcula centroides e matriz de dispersão na interface gráfica. Inclui análises distribucionais baseadas em Boxplots estatísticos interativos.
 
-- Juros (t)
-- Taxa SELIC (banco central)
-- Quantidade de ações
-- IPCA (IBGE)
+#### `src/api/` e Root
 
+* `client.ts`: Instância isolada do Axios para roteamento seguro de API.
 
+* `App.tsx`: Gerenciador de contexto e estado global da aplicação. Hospeda o controle temporal base (Data de Início/Fim) e o fluxo de transição entre abas da SPA, passando estados via *Props* nativas do React.
+* `index.html`: *Template* injetável do Vite, com meta-tags otimizadas.
+* `package.json`: Manifesto determinístico de ecossistema Node.js para garantir reprodutibilidade irrestrita em múltiplos sistemas operacionais.
 
-### Teoria Moderna do Portfólio (Markowitz)
+### 3.3. Infraestrutura (`/nginx` e Docker)
 
+* `nginx.conf`: Configuração do servidor *Proxy Reverso*. Otimiza a entrega estática dos artefatos JavaScript/CSS compilados pelo Vite e encaminha requisições da rota `/api` internamente para a porta 8000 do *container* FastAPI no *backend*, solucionando impasses de CORS nativamente via rede local Docker.
 
-#### sma e ma 
+* `docker-compose.yml`: Topologia da infraestrutura. Levanta simultaneamente o banco PostgreSQL persistente (com *volumes* mapeados), o ambiente Python com Uvicorn e o nó Nginx servindo a compilação do React.
 
-A Média Móvel Simples (SMA) tem memória de elefante: ela dá o exato mesmo peso para o preço de hoje e para o preço de 20 dias atrás. A Exponencial (EMA) tem viés de recência: ela dá muito mais peso ao que as pessoas estão fazendo agora.
+---
 
-Se o mercado está lateralizado (andando de lado) ou subindo em uma escadinha perfeitamente constante, a SMA e a EMA vão se abraçar no gráfico. A EMA só vai descolar agressivamente da SMA no momento em que ocorrer um choque exógeno (ex: uma notícia política que faz a ação despencar num único dia). A EMA afunda rápido, a SMA demora a reagir.
+## 4. Endpoints e Rotas da API
 
+Todas as rotas partem do prefixo `/api` no Nginx, redirecionado ao roteador interno `/dashboard-ativos/`.
 
-#### log_return
+* `GET /kpis-macro`: Retorna métricas macroeconômicas instantâneas (Selic, IPCA). Resposta em taxa percentual bruta.
 
- Se uma ação cai 50% num dia (de 100 para 50), no dia seguinte ela precisa subir 100% (de 50 para 100) só para você voltar ao zero a zero. A matemática simples não fecha a conta.O logaritmo natural resolve isso criando uma simetria perfeita e aditividade no tempo. O retorno logarítmico é definido como:$$R_t = \ln\left(\frac{P_t}{P_{t-1}}\right)$$Se a ação dobra de valor, $R_t \approx +0.69$. Se ela perde metade do valor, $R_t \approx -0.69$. Além disso, retornos logarítmicos se aproximam de uma Distribuição Normal (Curva de Gauss), o que é um pré-requisito estrito para a maioria dos algoritmos estatísticos e de Machine Learning funcionarem corretamente sem viés.
+* `GET /resumo`: Recebe os parâmetros `dt_inicio` e `dt_fim`. Retorna uma matriz de variação de preços logarítmicos e absolutos para todo o *pool* de ativos.
 
+* `GET /series`: Endpoint analítico. Recebe `dt_inicio`, `dt_fim`, `ativos` (String tipada) e `janela` (Int). Retorna a série temporal purificada com o fechamento ajustado e o cálculo do vetor de EMA respectivo à janela solicitada.
 
+* `GET /machine-learning`: Recebe período temporal e `n_clusters` (K do K-Means). Retorna matrizes de espalhamento bidimensional, métricas de *Silhouette* e Matriz de Correlação cruzada.
 
- http://localhost/api-financeira/dashboard-ativos/machine-learning?dt_inicio=2026-07-02&dt_fim=2026-07-09&n_clusters=4
+* `GET /analise-qualitativa`: Recebe cenário quantitativo consolidado, ativo alvo e matriz macro. Retorna uma `String` processada por Modelos Fundacionais (LLMs) com *web scraping* interno anexado.
+
+## 5. Pipeline de Dados e Ingestão
+
+O fluxo de dados da aplicação obedece a um rito temporal voltado para a bolsa brasileira (B3).
+
+O módulo `scheduler.py` contém rotinas agendadas (CRON) configuradas para execução exclusiva entre 10h e 17h, ignorando finais de semana. A arquitetura de extração intradiária assíncrona captura micro-tendências em velas (candles) de 5 minutos.
+
+A arquitetura garante imunidade matemática ao *Call de Fechamento* das 16h55 às 17h00 da B3, ignorando o leilão em formação para evitar anomalias de volatilidade espúria no cálculo dos desvios padrões do espaço latente da aplicação (Scikit-Learn). O banco de dados relacional é garantido contra duplicidade através das *Constraints* no nível de repositório.
+
+## 6. Integração com Inteligência Artificial (LLM)
+
+O sistema utiliza os modelos fundacionais de alta latência do Google (Série Flash) acoplados sob a perspectiva de um Engenheiro Quantitativo. Para contornar as limitações de cota rígida (limites de RPM/TPM - Erro `429 RESOURCE_EXHAUSTED`), implementamos os seguintes protocolos:
+
+1. **Bypass de Grounding via Web Scraping:** Desacoplamos a ferramenta nativa de buscas da Google (que eleva drasticamente o consumo do modelo) em favor de um raspador de RSS limpo via Python nativo. Os textos brutos de mercado alimentam diretamente o *prompt* do LLM no contêiner.
+
+2. **Resiliência e Timeout:** Implementação mandatória de tentativa/erro (*try-catch* com *loop* paramétrico), garantindo o *Exponential Backoff* (espera gradual de 2s, 4s, 8s) se o gargalo da camada de API externa rejeitar a conexão.
+
+3. **Graceful Degradation:** Em cenário de total inviabilidade da API remota, a função entrega estritamente um texto de aviso estruturado ao *frontend*, mantendo os painéis estatísticos, *pipelines* de dados e gráficos operando com rigor analítico absoluto e sem impacto na experiência de navegação (ausência de *White Screens of Death*).
