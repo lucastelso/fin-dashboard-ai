@@ -117,10 +117,10 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         df = df.with_columns([
             
             # Média Móvel (MA)
-            (pl.col("fechamento").rolling_mean(window_size=janela).over("ativo").alias(f"ma_{janela}")),
+            (pl.col("fechamento").rolling_mean(window_size=janela).over("ativo").alias(f"ma_{janela}")).round(2),
 
             # Média Móvel Exponencial (EMA)
-            pl.col("fechamento").ewm_mean(span=janela, adjust=False).over("ativo").alias(f"ema_{janela}"),
+            pl.col("fechamento").ewm_mean(span=janela, adjust=False).over("ativo").alias(f"ema_{janela}").round(2),
             
             # Retorno Logarítmico (ln(Pt / Pt-1))
             (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")            
