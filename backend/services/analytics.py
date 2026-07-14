@@ -7,6 +7,7 @@ from datetime import datetime
 sys.path.append("backend")
 from core.repository import BaseMarketRepository
 from core.logger import logger
+from services.scheduler import TICKERS_B3
 
 
 class IndicadoresAnaliticos(BaseMarketRepository):
@@ -14,16 +15,7 @@ class IndicadoresAnaliticos(BaseMarketRepository):
     Repositório com os métodos relacionados ao Analytics de ativos financeiros.
     Otimizado para municiar Single Page Applications (React) com dados vetorizados.
     """
-    ATIVOS_B3 = [    
-        "PETR4.SA", "PETR3.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", 
-        "BBDC3.SA",  "BBAS3.SA", "ABEV3.SA", "WEGE3.SA", "SUZB3.SA",  
-        "RENT3.SA", "B3SA3.SA", "RADL3.SA", "JBSS3.SA", "BPAC11.SA", 
-        "EQTL3.SA", "VIVT3.SA","RAIL3.SA", "SBSP3.SA", "PRIO3.SA", 
-        "BBSE3.SA", "GGBR4.SA", "UGPA3.SA", "CMIG4.SA", "CSAN3.SA", 
-        "HYPE3.SA", "ENEV3.SA", "TIMS3.SA", "TOTS3.SA", "EGIE3.SA", 
-        "KLBN11.SA", "CSNA3.SA", "ALPA4.SA","IVVB11.SA", "LVOL11.SA", 
-        "DIVO11.SA", "SMAL11.SA", "BOVA11.SA"
-        ]
+    ATIVOS_B3 = TICKERS_B3
 
     async def get_resumo_mercado(self, dt_inicio: str, dt_fim: str) -> Dict[str, Any]:
         """

@@ -3,6 +3,7 @@ import sys
 import polars as pl
 
 sys.path.append("backend")
+
 from core.database import AsyncSessionLocal
 from core.logger import logger 
 from core.repository import BaseMarketRepository
@@ -43,5 +44,4 @@ async def main():
         logger.info("Teste de conexão com o banco de dados finalizado.")
 
 if __name__ == "__main__":
-    # Executa o Event Loop principal
     asyncio.run(main())
