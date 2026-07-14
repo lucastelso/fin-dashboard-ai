@@ -39,7 +39,7 @@ class AnalistaQualitativo:
         """
         # Configuração do Grounding e controle de hiperparâmetros contra alucinação
         config = types.GenerateContentConfig(
-            tools=[{"google_search": {}}],
+            # tools=[{"google_search": {}}],
             temperature=0.15  # Baixa entropia para preservar o rigor matemático
         )
 
