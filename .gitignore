@@ -4,7 +4,8 @@ __pycache__
 estudo_api.md
 
 readme_original.md
-
+bk_cron.sh
+backfill.py
 
 # Logs
 logs
