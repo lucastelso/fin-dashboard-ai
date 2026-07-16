@@ -18,7 +18,7 @@ const DICIONARIO_ATIVOS: Record<string, string> = {
   "EQTL3.SA": "Equatorial ON", "VIVT3.SA": "Vivo PN", "RAIL3.SA": "Rumo ON",
   "SBSP3.SA": "Sabesp ON", "PRIO3.SA": "Prio ON", "BBSE3.SA": "BB Seguridade ON",
   "GGBR4.SA": "Gerdau PN", "CSNA3.SA": "CSN ON", "IVVB11.SA": "S&P 500 ETF", 
-  "LVOL11.SA": "Low Volatility ETF", "DIVO11.SA": "Dividendos ETF", "BOVA11.SA": "Ibovespa ETF",
+  "LVOL11.SA": "Nu Low Volatility ETF", "DIVO11.SA": "Dividendos ETF", "BOVA11.SA": "Ibovespa ETF",
   "UGPA3.SA": "Ultrapar","CMIG4.SA": "Cemig", "CSAN3.SA": "Cosan","HYPE3.SA": "Hypera Pharma",
   "ENEV3.SA": "Eneva", "TIMS3.SA": "TIM", "TOTS3.SA": "TOTVS", "EGIE3.SA": "Engie Brasil",
   "KLBN11.SA": "Klabin",

@@ -2,7 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, List, Optional
+from datetime import date
+
 import asyncio
+
+import sys
+
+sys.path.append("backend")
 
 from core.database import get_db
 from core.logger import logger
@@ -12,6 +18,8 @@ from services.macro_eco import MacroeconomiaAPI
 from services.llm import AnalistaQualitativo
 from services.macro_eco import MacroeconomiaAPI
 
+
+
 router = APIRouter(
     prefix="/dashboard-ativos", 
     tags=['Analytics & Dashboard']
@@ -20,7 +28,7 @@ router = APIRouter(
 async def resumo_mercado(
     # 'examples' no plural com uma lista para alinhar com o Pydantic V2
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
-    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
     session: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -47,7 +55,7 @@ async def resumo_mercado(
 @router.get("/series")
 async def serie_temporal_ativos(
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
-    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
     ativos: List[str] = Query(..., description="Lista de tickers para o gráfico", alias="ativos"),
     janela: int = Query(20, description="Janela de períodos para EMA/Volatilidade"),
     session: AsyncSession = Depends(get_db)
@@ -96,7 +104,7 @@ async def kpis_macroeconomicos() -> Dict[str, Any]:
 async def analise_avancada_ml(
     request: Request,
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
-    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
     ativos: Optional[List[str]] = Query(None, description="Tickers para clusterização. Vazio = Todos", alias="ativos"),
     n_clusters: int = Query(4, description="Quantidade de grupos desejada"),
     session: AsyncSession = Depends(get_db)
@@ -137,7 +145,7 @@ async def analise_avancada_ml(
 @router.get("/analise-qualitativa")
 async def analise_qualitativa_ia(
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
-    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=["2026-07-10"]),
+    dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
     ativos: List[str] = Query(None, description="Tickers alvo", alias="ativos"),
     session: AsyncSession = Depends(get_db)
 ) -> Dict[str, str]:

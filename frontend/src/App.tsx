@@ -4,8 +4,17 @@ import DashboardMacro from './pages/DashboardMacro';
 import DashboardML from './pages/DashboardML';
 
 export default function App() {
-  const [dataInicio, setDataInicio] = useState('2026-06-01');
-  const [dataFim, setDataFim] = useState('2026-07-10');
+  // Calcula dinamicamente o dia de hoje e 30 dias atrás diretamente no JavaScript
+  const hoje = new Date();
+  const dataFimDinamica = hoje.toISOString().split('T')[0];
+  
+  const trintaDiasAtras = new Date();
+  trintaDiasAtras.setDate(hoje.getDate() - 30);
+  const dataInicioDinamica = trintaDiasAtras.toISOString().split('T')[0];
+
+  // Injeta no estado do React
+  const [dataInicio, setDataInicio] = useState(dataInicioDinamica);
+  const [dataFim, setDataFim] = useState(dataFimDinamica);
   const [abaAtiva, setAbaAtiva] = useState<'macro' | 'ml'>('macro');
 
   return (
