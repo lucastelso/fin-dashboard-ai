@@ -1,20 +1,30 @@
 FROM python:3.11-slim
 
-# PYTHONUNBUFFERED=1 impede o Python de atrasar os logs (print)
-# PYTHONDONTWRITEBYTECODE=1 impede a criação inútil de arquivos .pyc
-ENV PYTHONUNBUFFERED=1 \  
+
+ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=off
+    # Força o uv a usar o python do sistema do contêiner
+    UV_SYSTEM_PYTHON=1 
 
 WORKDIR /app
 
-RUN pip install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 COPY requirements.txt .
 
-RUN uv pip install --system -r requirements.txt
+# Usa o cache de build do DockerKit para o UV. 
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip sync requirements.txt
 
-COPY . .
+# Criação de usuário sem privilégios
+RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin appuser
 
-# Inicia servidor ASGI (Uvicorn) apontando para a instância do FastAPI.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copia o restante do código e ajusta as permissões para o novo usuário
+COPY --chown=appuser:appgroup . .
+
+# Faz o drop de privilégios de root para o usuário seguro
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]p
