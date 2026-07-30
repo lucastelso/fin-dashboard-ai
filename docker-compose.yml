@@ -48,8 +48,6 @@ services:
         condition: service_healthy
     networks:
       - fin_network
-
-  # ADICIONADO: O serviço do frontend que o Nginx estava exigindo
   frontend:
     build: 
       context: ./frontend
