@@ -1,21 +1,28 @@
+// frontend/src/App.tsx
 import { useState } from 'react';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { Calendar, LayoutDashboard, BrainCircuit } from 'lucide-react';
 import DashboardMacro from './pages/DashboardMacro';
 import DashboardML from './pages/DashboardML';
 
-export default function App() {
-  // Calcula dinamicamente o dia de hoje e 30 dias atrás diretamente no JavaScript
+// Extraímos a lógica de inicialização para fora do componente.
+// Isso evita que o JavaScript recalcule as datas em cada re-render (ex: quando o usuário digita um novo input).
+const getInitialDates = () => {
   const hoje = new Date();
-  const dataFimDinamica = hoje.toISOString().split('T')[0];
-  
   const trintaDiasAtras = new Date();
   trintaDiasAtras.setDate(hoje.getDate() - 30);
-  const dataInicioDinamica = trintaDiasAtras.toISOString().split('T')[0];
+  
+  return {
+    inicio: trintaDiasAtras.toISOString().split('T')[0],
+    fim: hoje.toISOString().split('T')[0]
+  };
+};
 
-  // Injeta no estado do React
-  const [dataInicio, setDataInicio] = useState(dataInicioDinamica);
-  const [dataFim, setDataFim] = useState(dataFimDinamica);
-  const [abaAtiva, setAbaAtiva] = useState<'macro' | 'ml'>('macro');
+const defaultDates = getInitialDates();
+
+export default function App() {
+  const [dataInicio, setDataInicio] = useState(defaultDates.inicio);
+  const [dataFim, setDataFim] = useState(defaultDates.fim);
 
   return (
     <div className="min-h-screen bg-slate-950 p-8 font-sans text-slate-100">
@@ -26,31 +33,62 @@ export default function App() {
         </div>
         
         <div className="flex gap-4 items-center flex-wrap">
-          <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-            <button 
-              onClick={() => setAbaAtiva('macro')} 
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${abaAtiva === 'macro' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+          {/* Navegação Roteada com NavLink */}
+          <nav className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+            <NavLink 
+              to="/macro" 
+              end
+              className={({ isActive }) => 
+                `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'
+                }`
+              }
             >
               <LayoutDashboard className="w-4 h-4" /> Visão Macro
-            </button>
-            <button 
-              onClick={() => setAbaAtiva('ml')} 
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${abaAtiva === 'ml' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            </NavLink>
+            
+            <NavLink 
+              to="/ml" 
+              className={({ isActive }) => 
+                `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'
+                }`
+              }
             >
               <BrainCircuit className="w-4 h-4" /> Inteligência (ML)
-            </button>
-          </div>
+            </NavLink>
+          </nav>
 
           <div className="flex items-center gap-3 bg-slate-900 p-2 rounded-lg shadow-sm border border-slate-800">
             <Calendar className="w-5 h-5 text-slate-500 ml-2" />
-            <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="bg-transparent border-none text-sm font-medium text-slate-300 outline-none" style={{colorScheme: 'dark'}} />
+            <input 
+              type="date" 
+              value={dataInicio} 
+              onChange={(e) => setDataInicio(e.target.value)} 
+              className="bg-transparent border-none text-sm font-medium text-slate-300 outline-none" 
+              style={{colorScheme: 'dark'}} 
+            />
             <span className="text-slate-600">até</span>
-            <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="bg-transparent border-none text-sm font-medium text-slate-300 outline-none pr-2" style={{colorScheme: 'dark'}} />
+            <input 
+              type="date" 
+              value={dataFim} 
+              onChange={(e) => setDataFim(e.target.value)} 
+              className="bg-transparent border-none text-sm font-medium text-slate-300 outline-none pr-2" 
+              style={{colorScheme: 'dark'}} 
+            />
           </div>
         </div>
       </header>
 
-      {abaAtiva === 'macro' ? <DashboardMacro dataInicio={dataInicio} dataFim={dataFim} /> : <DashboardML dataInicio={dataInicio} dataFim={dataFim} />}
+      {/* Roteamento das Páginas */}
+      <main>
+        <Routes>
+          <Route path="/macro" element={<DashboardMacro dataInicio={dataInicio} dataFim={dataFim} />} />
+          <Route path="/ml" element={<DashboardML dataInicio={dataInicio} dataFim={dataFim} />} />
+          {/* Fallback de rota para caso o usuário digite uma URL que não existe */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 }
