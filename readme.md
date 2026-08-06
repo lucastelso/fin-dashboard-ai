@@ -1,6 +1,6 @@
 
 ---
-# Documentação Técnica - Dashboard Financeiro Inteligente
+# Dashboard Financeiro Inteligente
 
 ## 1. Filosofia Arquitetural e Design de Sistema
 
