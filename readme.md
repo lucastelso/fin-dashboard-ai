@@ -1,6 +1,6 @@
 
 ---
-# Documentação Técnica - Dashboard Financeiro Inteligente
+# Dashboard Financeiro Inteligente
 
 ## 1. Filosofia Arquitetural e Design de Sistema
 
@@ -22,7 +22,7 @@ A filosofia central do projeto baseia-se em **Resiliência e Desempenho**:
 
 ### Backend (Processamento e API)
 
-* **Linguagem:** Python 3.11
+* **Linguagem:** Python 3.12
 * **Framework Web:** FastAPI (ASGI)
 * **Motor de Dados:** Polars (Manipulação de DataFrames de alta performance com multithread)
 * **Machine Learning:** Scikit-Learn (K-Means Clustering, Silhouette Score)
