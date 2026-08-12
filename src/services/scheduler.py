@@ -5,13 +5,12 @@ from apscheduler.triggers.cron import CronTrigger
 import polars as pl
 import sys
 
-sys.path.append("backend") 
 
 from core.logger import logger
 from core.database import AsyncSessionLocal
-# from models.market import Base ADICIONAR DEPOIS PARA GARANTIR O FORMATO DESEJADO
 from services.fetch_yahoo import fetch_yahoo_json_async
 from services.db_upsert import upsert_asset_prices
+# from models.market import Base ADICIONAR DEPOIS PARA GARANTIR O FORMATO DESEJADO
 
 # Agendador assíncrono
 scheduler = AsyncIOScheduler()

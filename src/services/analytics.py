@@ -4,7 +4,6 @@ import numpy as np
 from typing import Any, Dict, List, Union
 from datetime import datetime
 
-sys.path.append("backend")
 from core.repository import BaseMarketRepository
 from core.logger import logger
 from services.scheduler import TICKERS_B3
