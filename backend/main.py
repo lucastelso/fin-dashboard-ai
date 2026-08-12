@@ -13,11 +13,11 @@ from api.routers.dashboard import router as dashboard_router
 async def lifespan(app: FastAPI):
     logger.info("Inicializando Dashboard Financeiro - API...")
     
-    # 1. Cria tabelas caso não existam na inicialização
+    # Cria tabelas caso não existam na inicialização
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # 2. Cria um ProcessPoolExecutor para tarefas pesadas e inicia ingestão de dados
+    # Cria um ProcessPoolExecutor para tarefas pesadas e inicia ingestão de dados
     try:
         await job_ingestao_5m()
         logger.info("[BOOTSTRAP] Carga inicial concluída com sucesso.")
@@ -27,14 +27,14 @@ async def lifespan(app: FastAPI):
     workers = max(1, multiprocessing.cpu_count() - 2)
     app.state.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     
-    # 3. Liga o Agendador de Ingestão em background
+    # Liga o Agendador de Ingestão em background
     setup_scheduler()
     scheduler.start()
     logger.info("Scheduler iniciado. Ingestão rodará de seg-sex, 10h-17h a cada 15m.")
     
     yield # HORA DO SHOW
 
-    # 4. Desliga o Scheduler e o ProcessPool na finalização da aplicação
+    # Desliga o Scheduler e o ProcessPool na finalização da aplicação
     logger.info("Desligando ProcessPool e Scheduler...")
     scheduler.shutdown()
     app.state.process_pool.shutdown(wait=True, cancel_futures=True)
