@@ -41,7 +41,6 @@ services:
       - .env
     environment:
       - DB_HOST=postgres_db # Explícito para o Service Discovery interno
-    # REMOVIDO: ports - "8000:8000". Todo tráfego deve passar pelo Nginx.
       - TZ=America/Sao_Paulo
     depends_on:
       postgres_db:

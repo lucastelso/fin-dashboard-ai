@@ -5,8 +5,6 @@ import { Calendar, LayoutDashboard, BrainCircuit } from 'lucide-react';
 import DashboardMacro from './pages/DashboardMacro';
 import DashboardML from './pages/DashboardML';
 
-// Extraímos a lógica de inicialização para fora do componente.
-// Isso evita que o JavaScript recalcule as datas em cada re-render (ex: quando o usuário digita um novo input).
 const getInitialDates = () => {
   const hoje = new Date();
   const trintaDiasAtras = new Date();
@@ -83,12 +81,18 @@ export default function App() {
       {/* Roteamento das Páginas */}
       <main>
         <Routes>
+          {/* 1. Rota raiz: Redireciona explicitamente para o macro */}
+          <Route path="/" element={<Navigate to="/macro" replace />} />
+          
+          {/* 2. Rotas de negócio */}
           <Route path="/macro" element={<DashboardMacro dataInicio={dataInicio} dataFim={dataFim} />} />
           <Route path="/ml" element={<DashboardML dataInicio={dataInicio} dataFim={dataFim} />} />
-          {/* Fallback de rota para caso o usuário digite uma URL que não existe */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          
+          {/* 3. Fallback (404): Idealmente redireciona para uma página de "Não Encontrado", 
+                 mas por enquanto volta ao macro */}
+          <Route path="*" element={<Navigate to="/macro" replace />} />
         </Routes>
       </main>
     </div>
   );
-}
+} 

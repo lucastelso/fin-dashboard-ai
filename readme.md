@@ -54,7 +54,7 @@ A filosofia central do projeto baseia-se em **Resiliência e Desempenho**:
 
 ## 3. Estrutura de Diretórios e Componentes
 
-### 3.1. Diretório `backend/`
+### 3.1. Diretório `src/`
 
 Responsável por toda a lógica de negócios, acesso a dados e roteamento.
 
