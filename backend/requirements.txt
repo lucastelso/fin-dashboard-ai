@@ -130,13 +130,17 @@ pydantic==2.13.4
     #   fastapi
     #   google-genai
     #   google-generativeai
+    #   pydantic-settings
 pydantic-core==2.46.4
     # via pydantic
+pydantic-settings==2.15.0
+    # via -r requirements.in
 pyparsing==3.3.2
     # via httplib2
 python-dotenv==1.2.2
     # via
     #   -r requirements.in
+    #   pydantic-settings
     #   uvicorn
 pyyaml==6.0.3
     # via uvicorn
@@ -180,6 +184,7 @@ typing-inspection==0.4.2
     # via
     #   fastapi
     #   pydantic
+    #   pydantic-settings
 tzlocal==5.4.4
     # via apscheduler
 uritemplate==4.2.0

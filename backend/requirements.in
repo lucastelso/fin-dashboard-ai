@@ -19,6 +19,7 @@ google-genai
 python-dotenv
 httpx
 pyarrow
+pydantic_settings
 
 # Scheduling
 apscheduler
