@@ -1,7 +1,7 @@
 import sys
 import asyncio
 
-sys.path.append("backend")
+sys.path.append("src")
 
 from services.macro_eco import MacroeconomiaAPI
 from core.logger import logger

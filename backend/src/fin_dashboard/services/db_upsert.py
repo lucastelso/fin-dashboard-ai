@@ -4,8 +4,12 @@ from sqlalchemy.dialects.postgresql import insert
 import polars as pl
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from models.market import SeriesAtivos, DimensaoAtivos
-from core.logger import logger
+import sys
+
+sys.path.append("src")  # Adiciona o diretório src ao sys.path para importações relativas
+
+from market import SeriesAtivos, DimensaoAtivos
+from logger import logger
 
 async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
     """

@@ -3,11 +3,11 @@ import polars as pl
 from datetime import datetime, timezone, timedelta
 import sys
 
-sys.path.append("backend")  
+# sys.path.append("src")  
 
 from core.database import engine, AsyncSessionLocal  # <-- Removi o Base daqui
 from services.db_upsert import upsert_asset_prices 
-from core.logger import logger
+from src.core.logger import logger
 from services.fetch_yahoo import fetch_yahoo_json_async
 from models.market import Base
 

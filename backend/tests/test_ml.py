@@ -1,7 +1,7 @@
 import sys
 import asyncio
 
-sys.path.append("backend")
+sys.path.append("src")
 
 from services.ml import executar_pipeline_kmeans
 from core.logger import logger

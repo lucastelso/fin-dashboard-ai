@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fin-dashboard-ai"
+version = "0.1.0"
+description = "Dashboard Financeiro Inteligente"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Mantenha seu fluxo com o uv, isso aqui serve apenas para 
+    # declaração do pacote local, as dependências pesadas 
+    # continuam sendo geradas pelo uv no requirements.txt
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["fin_dashboard*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = "src"
