@@ -4,9 +4,9 @@ import numpy as np
 from typing import Any, Dict, List, Union
 from datetime import datetime
 
-from core.repository import BaseMarketRepository
-from core.logger import logger
-from services.scheduler import TICKERS_B3
+from fin_dashboard.core.repository import BaseMarketRepository
+from fin_dashboard.core.logger import logger
+from fin_dashboard.services.scheduler import TICKERS_B3
 
 
 class IndicadoresAnaliticos(BaseMarketRepository):

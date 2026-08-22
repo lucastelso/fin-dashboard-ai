@@ -1,6 +1,6 @@
 import httpx
 from typing import Dict, Any
-from core.logger import logger
+from fin_dashboard.core.logger import logger
 
 class MacroeconomiaAPI:
     """

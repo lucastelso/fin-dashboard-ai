@@ -1,12 +1,9 @@
-import sys
 import asyncio
 
-sys.path.append("src")
-
-from services.ml import executar_pipeline_kmeans
-from core.logger import logger
-from core.database import AsyncSessionLocal
-from services.analytics import IndicadoresAnaliticos
+from fin_dashboard.services.ml import executar_pipeline_kmeans
+from fin_dashboard.core.logger import logger
+from fin_dashboard.core.database import AsyncSessionLocal
+from fin_dashboard.services.analytics import IndicadoresAnaliticos
 
 ATIVOS_B3 = [    
     "PETR4.SA", "PETR3.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", 

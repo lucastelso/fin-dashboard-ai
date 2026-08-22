@@ -1,11 +1,8 @@
-import sys 
 import asyncio
 
-sys.path.append("backend")
-
-from core.database import AsyncSessionLocal
-from core.logger import logger
-from services.analytics import IndicadoresAnaliticos
+from fin_dashboard.services.analytics import IndicadoresAnaliticos
+from fin_dashboard.core.database import AsyncSessionLocal
+from fin_dashboard.core.logger import logger
 
 async def main():
     logger.info("Iniciando teste de integração do Analytics (Resumo Macro)...")

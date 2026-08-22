@@ -3,11 +3,11 @@ from fastapi import FastAPI, APIRouter
 import concurrent.futures
 import multiprocessing
 
-from services.scheduler import setup_scheduler, scheduler, job_ingestao_5m
-from core.logger import logger
-from core.database import engine
-from models.market import Base
-from api.routers.dashboard import router as dashboard_router
+from fin_dashboard.services.scheduler import setup_scheduler, scheduler, job_ingestao_5m
+from fin_dashboard.core.logger import logger
+from fin_dashboard.core.database import engine
+from fin_dashboard.models.market import Base
+from fin_dashboard.api.dashboard import router as dashboard_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

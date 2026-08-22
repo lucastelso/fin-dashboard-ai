@@ -1,10 +1,8 @@
 import sys
 import asyncio
 
-sys.path.append("src")
-
-from services.macro_eco import MacroeconomiaAPI
-from core.logger import logger
+from fin_dashboard.services.macro_eco import MacroeconomiaAPI
+from fin_dashboard.core.logger import logger
 
 async def main():
     logger.info("INICIANDO TESTE DA API DE DADOS MACROECONÔMICOS")

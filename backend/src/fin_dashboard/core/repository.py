@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 import polars as pl
-from core.logger import logger
+from fin_dashboard.core.logger import logger
 
 class BaseMarketRepository:
     """
