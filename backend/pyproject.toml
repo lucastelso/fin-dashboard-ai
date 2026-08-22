@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fin-dashboard-ai"
 version = "0.1.0"
 description = "Dashboard Financeiro Inteligente - Backend"
-requires-python = ">=3.12"
+requires-python = "==3.12.13"
 dependencies = [
     # Web Framework & Async I/O
     "fastapi",
