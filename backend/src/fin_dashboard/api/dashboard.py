@@ -3,20 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, List, Optional
 from datetime import date
-
 import asyncio
 
-import sys
 
-sys.path.append("backend")
-
-from core.database import get_db
-from core.logger import logger
-from services.analytics import IndicadoresAnaliticos
-from services.ml import executar_pipeline_kmeans
-from services.macro_eco import MacroeconomiaAPI
-from services.llm import AnalistaQualitativo
-from services.macro_eco import MacroeconomiaAPI
+from fin_dashboard.core.database import get_db
+from fin_dashboard.core.logger import logger
+from fin_dashboard.services.analytics import IndicadoresAnaliticos
+from fin_dashboard.services.ml import executar_pipeline_kmeans
+from fin_dashboard.services.macro_eco import MacroeconomiaAPI
+from fin_dashboard.services.llm import AnalistaQualitativo
+from fin_dashboard.services.macro_eco import MacroeconomiaAPI
 
 
 

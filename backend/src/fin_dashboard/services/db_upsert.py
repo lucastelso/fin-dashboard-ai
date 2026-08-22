@@ -4,8 +4,9 @@ from sqlalchemy.dialects.postgresql import insert
 import polars as pl
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from models.market import SeriesAtivos, DimensaoAtivos
-from core.logger import logger
+
+from fin_dashboard.models.market import SeriesAtivos, DimensaoAtivos
+from fin_dashboard.core.logger import logger
 
 async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
     """

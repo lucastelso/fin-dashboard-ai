@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+alembic
+polars
+scikit-learn
+google-generativeai
+google-genai
+python-dotenv
+httpx
+pyarrow
+pydantic_settings
+apscheduler

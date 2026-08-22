@@ -2,7 +2,7 @@ import asyncio
 import sys
 import polars as pl
 
-sys.path.append("backend")
+sys.path.append("src")
 
 from core.database import AsyncSessionLocal
 from core.logger import logger 

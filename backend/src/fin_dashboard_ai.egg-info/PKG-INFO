@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: fin-dashboard-ai
+Version: 0.1.0
+Summary: Dashboard Financeiro Inteligente - Backend
+Requires-Python: >=3.12
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: sqlalchemy
+Requires-Dist: asyncpg
+Requires-Dist: alembic
+Requires-Dist: polars
+Requires-Dist: scikit-learn
+Requires-Dist: google-generativeai
+Requires-Dist: google-genai
+Requires-Dist: python-dotenv
+Requires-Dist: httpx
+Requires-Dist: pyarrow
+Requires-Dist: pydantic_settings
+Requires-Dist: apscheduler

@@ -1,14 +1,9 @@
-import sys
-import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-sys.path.append(str(BASE_DIR / "backend"))
-
-from core.logger import logger
+from fin_dashboard.core.logger import logger
 
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+load_dotenv("../.env")
 
 from google import genai
 

@@ -1,21 +1,25 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path="../.env")
+
+os.environ["DB_HOST"] = "localhost"
+
 import asyncio
 import polars as pl
 from datetime import datetime, timezone, timedelta
-import sys
 
-sys.path.append("backend")  
-
-from core.database import engine, AsyncSessionLocal  # <-- Removi o Base daqui
-from services.db_upsert import upsert_asset_prices 
-from core.logger import logger
-from services.fetch_yahoo import fetch_yahoo_json_async
-from models.market import Base
+from fin_dashboard.core.database import engine, AsyncSessionLocal 
+from fin_dashboard.core.logger import logger
+from fin_dashboard.services.fetch_yahoo import fetch_yahoo_json_async
+from fin_dashboard.services.db_upsert import upsert_asset_prices 
+from fin_dashboard.models.market import Base
 
 async def main():
     tickers = ["BBAS3.SA", "PETR4.SA", "VALE3.SA", "BOVA11.SA", "IVVB11.SA", "LVOL11.SA"]
     
     end_dt = datetime.now(tz=timezone.utc)
-    start_dt = end_dt - timedelta(days=59) # Máximo permitido pelo Yahoo para "5m"
+    start_dt = end_dt - timedelta(days=20) # Máximo permitido pelo Yahoo para "5m"
     
     start_ts = int(start_dt.timestamp())
     end_ts = int(end_dt.timestamp())

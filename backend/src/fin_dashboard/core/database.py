@@ -1,10 +1,7 @@
-import sys
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-sys.path.append("backend")
-
-from core.config import settings
-from core.logger import logger
+from fin_dashboard.core.config import settings
+from fin_dashboard.core.logger import logger
 
 logger.debug(f"Conectando em: {settings.async_database_url.render_as_string(hide_password=True)}")
 

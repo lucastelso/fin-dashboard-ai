@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DB_PORT: int = 5432
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
         env_ignore_empty=True

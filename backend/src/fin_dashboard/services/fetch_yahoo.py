@@ -1,9 +1,8 @@
 import httpx
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-import sys
 
-from core.logger import logger
+from fin_dashboard.core.logger import logger
 
 async def fetch_yahoo_json_async(
         ticker: str, 

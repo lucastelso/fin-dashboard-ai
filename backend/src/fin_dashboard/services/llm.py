@@ -6,7 +6,8 @@ import xml.etree.ElementTree as ET
 from google import genai
 from google.genai import types
 from google.genai.errors import APIError
-from core.logger import logger
+
+from fin_dashboard.core.logger import logger
 
 class AnalistaQualitativo:
     def __init__(self):
