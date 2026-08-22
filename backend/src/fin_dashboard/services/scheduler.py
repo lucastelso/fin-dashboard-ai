@@ -3,13 +3,11 @@ from datetime import datetime, timezone, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import polars as pl
-import sys
 
-
-from core.logger import logger
-from core.database import AsyncSessionLocal
-from services.fetch_yahoo import fetch_yahoo_json_async
-from services.db_upsert import upsert_asset_prices
+from fin_dashboard.core.logger import logger
+from fin_dashboard.core.database import AsyncSessionLocal
+from fin_dashboard.services.fetch_yahoo import fetch_yahoo_json_async
+from fin_dashboard.services.db_upsert import upsert_asset_prices
 # from models.market import Base ADICIONAR DEPOIS PARA GARANTIR O FORMATO DESEJADO
 
 # Agendador assíncrono
@@ -82,8 +80,10 @@ async def job_ingestao_5m():
     async with AsyncSessionLocal() as session:
         try:
             await upsert_asset_prices(session, master_df)
-            logger.info(f"[CRON] Upsert concluído. {master_df.height} registros processados.")
+            await session.commit()
+            logger.info(f"[CRON] Upsert concluído e comitado. {master_df.height} registros.")
         except Exception as e:
+            await session.rollback()
             logger.error(f"[CRON] Falha na persistência agendada: {e}")
 
 def setup_scheduler():
