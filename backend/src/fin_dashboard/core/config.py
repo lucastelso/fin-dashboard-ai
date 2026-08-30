@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
     POSTGRES_DB: str
     DB_HOST: str = "postgres_db"
-    DB_PORT: int = 5432
+    DB_PORT: int = 6432
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),

@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"[BOOTSTRAP] Falha crítica na carga inicial: {e}")
     
-    workers = max(1, multiprocessing.cpu_count() - 2)
+    workers = max(1, multiprocessing.cpu_count() - 16)
     app.state.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
     
     # Liga o Agendador de Ingestão em background
