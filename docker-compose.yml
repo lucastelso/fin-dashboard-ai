@@ -47,6 +47,7 @@ services:
       - DB_HOST=postgres_db # Explícito para o Service Discovery interno
       - TZ=America/Sao_Paulo
       - PYTHONPATH=/app/src
+      - DB_PORT=5432 # Necessário porque o internamente vai usar a porta 5432 mas da minha máquina é 6432
     depends_on:
       postgres_db:
         condition: service_healthy
