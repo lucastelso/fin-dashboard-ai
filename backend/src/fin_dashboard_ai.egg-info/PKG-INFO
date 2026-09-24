@@ -2,7 +2,7 @@ Metadata-Version: 2.4
 Name: fin-dashboard-ai
 Version: 0.1.0
 Summary: Dashboard Financeiro Inteligente - Backend
-Requires-Python: >=3.12
+Requires-Python: ==3.12.13
 Requires-Dist: fastapi
 Requires-Dist: uvicorn[standard]
 Requires-Dist: sqlalchemy
