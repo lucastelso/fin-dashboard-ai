@@ -1,4 +1,3 @@
-// frontend/src/api/client.ts
 import axios from 'axios';
 
 // Em produção, o frontend bate no faturamento relativo do Nginx. 
