@@ -35,14 +35,13 @@ async def job_ingestao_5m():
     
     end_dt = datetime.now(tz=timezone.utc)
     start_dt = end_dt - timedelta(days=7)
-    
     start_ts = int(start_dt.timestamp())
     end_ts = int(end_dt.timestamp())
 
-    semaforo = asyncio.Semaphore(5) # DEFINIDO PARA 5 REQUISIÇÕES HTTP POR VEZ
+    semaforo = asyncio.Semaphore(5)
 
     async def fetch_com_semaforo(ticker):
-        """
+        """        
         Queremos colocar dezenas de ações ao mesmo tempo, mas o firewall do yahoo nos verá
         como um ameaça ou um ataque de DDoS se tiver 100 conexões HTTP neles de uma vez. 
         Com o código abaixo, usamos a regra do semáforo, ou seja, uma catraca para enviarmos apenas
@@ -50,11 +49,9 @@ async def job_ingestao_5m():
         nosso IP bloqueado.
         """
         async with semaforo:
-            # Colocamos um mini-delay de 100ms para amaciar o tráfego
             await asyncio.sleep(0.1) 
             return await fetch_yahoo_json_async(ticker, start_ts, end_ts)
 
-    # Cria as tarefas envoltas no semáforo
     tasks = [fetch_com_semaforo(t) for t in TICKERS_B3]
     results = await asyncio.gather(*tasks)
 
@@ -64,24 +61,27 @@ async def job_ingestao_5m():
             all_records.extend(record_list)
 
     if not all_records:
-        logger.warning("[CRON] Nenhum dado retornado. Mercado fechado ou API indisponível.")
+        logger.warning("[CRON] Nenhum dado retornado.")
         return
 
-    master_df = pl.DataFrame(all_records).cast({
+    # Injeção Direta de Schema: Previne a realocação de memória pós-criação.
+    # O uso de pl.Float64 elimina o estrangulamento da simulação de ponto fixo.
+    schema = {
         "ticker": pl.Utf8,
-        "open": pl.Decimal(10, 2),
-        "high": pl.Decimal(10, 2),
-        "low": pl.Decimal(10, 2),
-        "close": pl.Decimal(10, 2),
+        "open": pl.Float64,
+        "high": pl.Float64,
+        "low": pl.Float64,
+        "close": pl.Float64,
         "volume": pl.Int64
-    })
+    }
     
-    # NOVA sessão para o Job, independente das rotas do FastAPI
+    master_df = pl.DataFrame(all_records, schema=schema)
+    
     async with AsyncSessionLocal() as session:
         try:
             await upsert_asset_prices(session, master_df)
             await session.commit()
-            logger.info(f"[CRON] Upsert concluído e comitado. {master_df.height} registros.")
+            logger.info(f"[CRON] Upsert concluído. {master_df.height} registros.")
         except Exception as e:
             await session.rollback()
             logger.error(f"[CRON] Falha na persistência agendada: {e}")
