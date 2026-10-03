@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fin-dashboard-ai"
 version = "0.1.0"
 description = "Dashboard Financeiro Inteligente - Backend"
-requires-python = "==3.12.13"
+requires-python = ">=3.12, <3.13"
 dependencies = [
     # Web Framework & Async I/O
     "fastapi",
@@ -19,20 +19,28 @@ dependencies = [
 
     # Data Processing & ML
     "polars",
+    "pyarrow", 
     "scikit-learn",
 
     # External Data & LLM
-    "google-generativeai",
-    "google-genai",
+    "google-genai", 
 
     # Utilities
     "python-dotenv",
     "httpx",
-    "pyarrow",
-    "pydantic_settings",
+    "pydantic",
+    "pydantic-settings", 
 
     # Scheduling
     "apscheduler"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio",
+    "mypy",
+    "ruff"
 ]
 
 [tool.setuptools.packages.find]
@@ -42,3 +50,4 @@ include = ["fin_dashboard*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = "src"
+asyncio_mode = "auto"

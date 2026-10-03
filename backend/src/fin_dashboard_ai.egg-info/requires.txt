@@ -4,11 +4,11 @@ sqlalchemy[asyncio]>=2.0.0
 asyncpg
 alembic
 polars
+pyarrow
 scikit-learn
-google-generativeai
 google-genai
 python-dotenv
 httpx
-pyarrow
-pydantic_settings
+pydantic
+pydantic-settings
 apscheduler

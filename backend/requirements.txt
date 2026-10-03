@@ -127,6 +127,7 @@ pycparser==3.0
     # via cffi
 pydantic==2.13.4
     # via
+    #   fin-dashboard-ai (pyproject.toml)
     #   fastapi
     #   google-genai
     #   google-generativeai
