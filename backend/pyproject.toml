@@ -13,7 +13,7 @@ dependencies = [
     "uvicorn[standard]",
 
     # Database & ORM
-    "sqlalchemy",
+    "sqlalchemy[asyncio]>=2.0.0",
     "asyncpg",
     "alembic",
 
