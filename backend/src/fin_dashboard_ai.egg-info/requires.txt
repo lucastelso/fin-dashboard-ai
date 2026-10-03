@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
+sqlalchemy[asyncio]>=2.0.0
 asyncpg
 alembic
 polars

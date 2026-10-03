@@ -170,6 +170,7 @@ tqdm==4.68.3
 typing-extensions==4.16.0
     # via
     #   alembic
+    #   anyio
     #   fastapi
     #   google-genai
     #   google-generativeai
@@ -177,6 +178,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
+    #   starlette
     #   typing-inspection
 typing-inspection==0.4.2
     # via

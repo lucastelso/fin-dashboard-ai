@@ -47,7 +47,7 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         ])
 
         resumo = resumo.sort("variacao_percentual", descending=True)
-        return {"dados": resumo.to_dicts()}
+        return {'status': 'sucesso', "dados": resumo.to_dicts()}
 
     async def get_serie_temporal_features(
               self, 
@@ -73,20 +73,29 @@ class IndicadoresAnaliticos(BaseMarketRepository):
         df = await self.fetch_as_polars(query, params={'dt_inicio': data_start, 'dt_fim': data_end, 'ativos': ativos})
 
         if df.is_empty():
-            return {"dados": []}
+            return {'status': 'df vazio', "dados": []}
 
-        df = df.sort(["ativo", "data"]).with_columns([
-            pl.col("fechamento").rolling_mean(window_size=janela).over("ativo").alias(f"ma_{janela}"),
-            pl.col("fechamento").ewm_mean(span=janela, adjust=False).over("ativo").alias(f"ema_{janela}"),
+        df = df.with_columns([
+            # Média Móvel (MA)
+            (pl.col("fechamento").rolling_mean(window_size=janela).over("ativo").alias("ma")),
+
+            # Média Móvel Exponencial (EMA)
+            pl.col("fechamento").ewm_mean(span=janela, adjust=False).over("ativo").alias("ema"),
+            
+            # Retorno Logarítmico
             (pl.col("fechamento").log() - pl.col("fechamento").shift(1).over("ativo").log()).alias("log_return")            
-        ]).with_columns([
-            pl.col("log_return").rolling_std(window_size=janela).over("ativo").alias(f"volatilidade_{janela}")
         ])
 
-        df_limpo = df.drop_nulls(subset=[f"ema_{janela}", f"volatilidade_{janela}"])
-        df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))
+        # Pipeline Secundário: Volatilidade
+        df = df.with_columns([
+            pl.col("log_return").rolling_std(window_size=janela).over("ativo").alias("volatilidade")
+        ])
 
-        return {"dados": df_limpo.to_dicts()}
+        # O drop_nulls agora usa os nomes fixos também
+        df_limpo = df.drop_nulls(subset=["ema", "volatilidade"])
+        df_limpo = df_limpo.with_columns(pl.col("data").dt.to_string("%Y-%m-%d %H:%M:%S"))
+        
+        return {'status': 'sucesso', "dados": df_limpo.to_dicts()}
 
     async def get_features_ml(
               self, 

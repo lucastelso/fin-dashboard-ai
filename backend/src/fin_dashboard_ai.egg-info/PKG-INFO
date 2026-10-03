@@ -5,7 +5,7 @@ Summary: Dashboard Financeiro Inteligente - Backend
 Requires-Python: ==3.12.13
 Requires-Dist: fastapi
 Requires-Dist: uvicorn[standard]
-Requires-Dist: sqlalchemy
+Requires-Dist: sqlalchemy[asyncio]>=2.0.0
 Requires-Dist: asyncpg
 Requires-Dist: alembic
 Requires-Dist: polars
