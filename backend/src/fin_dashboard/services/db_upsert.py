@@ -54,6 +54,7 @@ async def upsert_asset_prices(session: AsyncSession, df: pl.DataFrame) -> None:
         
         update_dict = {
             "open": fact_stmt.excluded.open,
+            "date": pl.Datetime, 
             "high": fact_stmt.excluded.high,
             "low": fact_stmt.excluded.low,
             "close": fact_stmt.excluded.close,
