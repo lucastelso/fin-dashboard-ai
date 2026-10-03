@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { Activity, TrendingUp, BarChart3, BrainCircuit, Loader2, Search } from 'lucide-react';
@@ -8,6 +8,9 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+
+// Importa os utilitários criados
+import { formatBRL, formatPercent, formatDateBR } from '../utils/formatters';
 
 const DICIONARIO_ATIVOS: Record<string, string> = {
   "PETR4.SA": "Petrobras PN", "PETR3.SA": "Petrobras ON", "VALE3.SA": "Vale ON",
@@ -52,22 +55,63 @@ const DICIONARIO_ATIVOS: Record<string, string> = {
   "USIM5.SA": "Usiminas",
   "VBBR3.SA": "Vibra Energia"
 };
+// ----------------------------------------------------------------------
+// MODULARIZAÇÃO 1: Sub-componente de KPIs (Isola a lógica macroeconômica)
+// ----------------------------------------------------------------------
+const PainelKpisMacro = ({ kpiData, qtdAtivos }: { kpiData: any, qtdAtivos: number }) => {
+  const selicDecimal = kpiData?.selic ? kpiData.selic / 100 : 0;
+  const ipcaDecimal = kpiData?.ipca ? kpiData.ipca / 100 : 0;
+  // Equação de Fisher
+  const juroReal = kpiData ? (((1 + selicDecimal) / (1 + ipcaDecimal)) - 1) * 100 : 0;
 
-interface DashboardMacroProps {
-  dataInicio: string;
-  dataFim: string;
-}
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 flex items-center gap-4">
+        <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><Activity className="w-6 h-6" /></div>
+        <div>
+          <p className="text-sm font-medium text-slate-400">Taxa Selic Meta</p>
+          <h3 className="text-2xl font-bold text-white">{kpiData ? formatPercent(kpiData.selic) : '...'}</h3>
+        </div>
+      </div>
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 flex items-center gap-4">
+        <div className="p-3 bg-rose-500/10 text-rose-400 rounded-lg"><TrendingUp className="w-6 h-6" /></div>
+        <div>
+          <p className="text-sm font-medium text-slate-400">Inflação (IPCA 12m)</p>
+          <h3 className="text-2xl font-bold text-white">{kpiData ? formatPercent(kpiData.ipca) : '...'}</h3>
+        </div>
+      </div>
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 flex items-center gap-4">
+        <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg"><Activity className="w-6 h-6" /></div>
+        <div>
+          <p className="text-sm font-medium text-slate-400">Juro Real (Ex-post)</p>
+          <h3 className="text-2xl font-bold text-white">{kpiData ? formatPercent(juroReal) : '...'}</h3>
+        </div>
+      </div>
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 flex items-center gap-4">
+        <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><BarChart3 className="w-6 h-6" /></div>
+        <div>
+          <p className="text-sm font-medium text-slate-400">Ativos Rastreados</p>
+          <h3 className="text-2xl font-bold text-white">{qtdAtivos}</h3>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroProps) {
+
+export default function DashboardMacro({ dataInicio, dataFim }: { dataInicio: string, dataFim: string }) {
   const [ativoSelecionado, setAtivoSelecionado] = useState('BOVA11.SA');
-  const [janelaEma, setJanelaEma] = useState(20);
+  const [janelaEma, setJanelaEma] = useState(120);
   const [termoBusca, setTermoBusca] = useState('');
 
+  // Busca KPIs
   const { data: kpiData } = useQuery({
     queryKey: ['kpis-macro'],
     queryFn: async () => (await apiClient.get('/dashboard-ativos/kpis-macro')).data,
+    staleTime: 1000 * 60 * 60, // 1 hora de cache, KPI não muda no intraday
   });
 
+  // Busca Resumo
   const { data: resumoData, isLoading: resumoLoading } = useQuery({
     queryKey: ['resumo-mercado', dataInicio, dataFim],
     queryFn: async () => {
@@ -76,6 +120,7 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
     },
   });
 
+  // Busca Série
   const { data: serieData, isLoading: serieLoading } = useQuery({
     queryKey: ['serie-temporal', dataInicio, dataFim, ativoSelecionado, janelaEma],
     queryFn: async () => {
@@ -86,6 +131,7 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
     },
   });
 
+  // Caching da IA (A GRANDE OTIMIZAÇÃO)
   const { refetch: fetchIA, data: iaData, isFetching: iaLoading } = useQuery({
     queryKey: ['ia-analise', dataInicio, dataFim, ativoSelecionado],
     queryFn: async () => {
@@ -95,47 +141,27 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
       return res.data.texto_analise;
     },
     enabled: false, 
+    staleTime: 1000 * 60 * 60 * 24, // Fica "fresco" por 24 horas
   });
 
-  // Motor de busca em memória RAM (Case Insensitive) para Ticker e Nome
-  const ativosFiltrados = resumoData?.filter((item: any) => {
-    const nomeEmpresa = DICIONARIO_ATIVOS[item.ativo] || '';
+  // Filtro Vetorizado e Memoizado
+  const ativosFiltrados = useMemo(() => {
+    if (!resumoData) return [];
     const termo = termoBusca.toLowerCase();
-    return (
-      item.ativo.toLowerCase().includes(termo) || 
-      nomeEmpresa.toLowerCase().includes(termo)
-    );
-  }) || [];
+    return resumoData.filter((item: any) => {
+      const nomeEmpresa = DICIONARIO_ATIVOS[item.ativo] || '';
+      return item.ativo.toLowerCase().includes(termo) || nomeEmpresa.toLowerCase().includes(termo);
+    });
+  }, [resumoData, termoBusca]);
 
-  // INJEÇÃO MATEMÁTICA: Cálculo do Juro Real ex-post (Equação de Fisher)
-  const selicDecimal = kpiData?.selic ? kpiData.selic / 100 : 0;
-  const ipcaDecimal = kpiData?.ipca ? kpiData.ipca / 100 : 0;
-  const juroReal = kpiData ? (((1 + selicDecimal) / (1 + ipcaDecimal)) - 1) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      {/* KPIs Macro (Expandido para 4 colunas) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><Activity className="w-6 h-6" /></div>
-          <div><p className="text-sm font-medium text-slate-400">Taxa Selic Meta</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${kpiData.selic}%` : '...'}</h3></div>
-        </div>
-        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
-          <div className="p-3 bg-rose-500/10 text-rose-400 rounded-lg"><TrendingUp className="w-6 h-6" /></div>
-          <div><p className="text-sm font-medium text-slate-400">Inflação (IPCA 12m)</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${kpiData.ipca}%` : '...'}</h3></div>
-        </div>
-        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
-          <div className="p-3 bg-amber-500/10 text-amber-400 rounded-lg"><Activity className="w-6 h-6" /></div>
-          <div><p className="text-sm font-medium text-slate-400">Juro Real (Prêmio de Risco)</p><h3 className="text-2xl font-bold text-white">{kpiData ? `${juroReal.toFixed(2)}%` : '...'}</h3></div>
-        </div>
-        <div className="bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-800 flex items-center gap-4">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><BarChart3 className="w-6 h-6" /></div>
-          <div><p className="text-sm font-medium text-slate-400">Ativos Rastreados</p><h3 className="text-2xl font-bold text-white">{resumoData?.length || 0}</h3></div>
-        </div>
-      </div>
+      <PainelKpisMacro kpiData={kpiData} qtdAtivos={resumoData?.length || 0} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Painel Esquerdo: Busca e Tabela */}
+        
+        {/* Tabela Esquerda */}
         <div className="lg:col-span-1 bg-slate-900 rounded-xl border border-slate-800 p-6 flex flex-col h-[500px]">
           <h2 className="text-lg font-bold text-white mb-3">Performance dos Ativos</h2>
           
@@ -146,38 +172,46 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
               placeholder="Buscar ativo ou empresa..." 
               value={termoBusca}
               onChange={(e) => setTermoBusca(e.target.value)}
-              className="bg-transparent border-none text-sm text-slate-200 outline-none w-full placeholder-slate-600 focus:ring-0"
+              className="bg-transparent border-none text-sm text-slate-200 outline-none w-full placeholder-slate-600"
             />
           </div>
 
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+          <div className="overflow-y-auto flex-1 pr-2">
             {resumoLoading ? <p className="text-slate-500">Buscando dados...</p> : (
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-900 sticky top-0 border-b border-slate-800 z-10">
                   <tr>
                     <th className="py-3 px-2 font-medium text-slate-500">Ativo</th>
-                    <th className="py-3 px-2 font-medium text-slate-500 text-right">Variação</th>
+                    <th className="py-3 px-2 font-medium text-slate-500 text-right">Preço/Variação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
                   {ativosFiltrados.map((item: any) => (
-                    <tr key={item.ativo} onClick={() => setAtivoSelecionado(item.ativo)} className={`cursor-pointer transition-colors ${ativoSelecionado === item.ativo ? 'bg-slate-800/80' : 'hover:bg-slate-800/40'}`}>
-                      <td className="py-3 px-2"><div className="font-bold text-slate-200">{item.ativo}</div><div className="text-xs text-slate-500">{DICIONARIO_ATIVOS[item.ativo] || 'Empresa B3'}</div></td>
-                      <td className={`py-3 px-2 text-right font-bold ${item.variacao_percentual >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{item.variacao_percentual > 0 ? '+' : ''}{item.variacao_percentual}%</td>
+                    <tr 
+                      key={item.ativo} 
+                      onClick={() => setAtivoSelecionado(item.ativo)} 
+                      className={`cursor-pointer transition-colors ${ativoSelecionado === item.ativo ? 'bg-slate-800/80' : 'hover:bg-slate-800/40'}`}
+                    >
+                      <td className="py-3 px-2">
+                        <div className="font-bold text-slate-200">{item.ativo}</div>
+                        <div className="text-xs text-slate-500">{DICIONARIO_ATIVOS[item.ativo] || 'Empresa B3'}</div>
+                      </td>
+                      <td className="py-3 px-2 text-right">
+                        {/* Preço formatado usando a função utilitária pura */}
+                        <div className="text-slate-300 font-medium">{formatBRL(item.preco_final)}</div>
+                        <div className={`font-bold text-xs ${item.variacao_percentual >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {item.variacao_percentual > 0 ? '+' : ''}{formatPercent(item.variacao_percentual)}
+                        </div>
+                      </td>
                     </tr>
                   ))}
-                  {ativosFiltrados.length === 0 && (
-                    <tr>
-                      <td colSpan={2} className="py-8 text-center text-slate-500 text-sm">Nenhum ativo encontrado.</td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             )}
           </div>
         </div>
 
-        {/* Painel Direito: Série Temporal com EMA Dinâmica */}
+        {/* Gráfico Direito */}
         <div className="lg:col-span-2 bg-slate-900 rounded-xl border border-slate-800 p-6 flex flex-col h-[500px]">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -200,17 +234,40 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
             {serieLoading ? (
               <div className="flex h-full items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-600" /></div>
             ) : !serieData || serieData.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-slate-500">Sem dados suficientes (Aumente o filtro de data para a EMA).</div>
+              <div className="flex h-full items-center justify-center text-slate-500">Sem dados suficientes.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={serieData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <LineChart data={serieData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis dataKey="data" stroke="#64748b" tick={{ fontSize: 12 }} tickFormatter={(val) => val ? String(val).split(' ')[0] : ''} minTickGap={30} />
-                  <YAxis domain={['auto', 'auto']} stroke="#64748b" tick={{ fontSize: 12 }} tickFormatter={(val) => `R$ ${Number(val).toFixed(2)}`} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc', borderRadius: '8px' }} labelFormatter={(label) => `Data: ${label}`} />
+                  
+                  {/* FORMATAÇÃO DO EIXO X (Data BR) */}
+                  <XAxis 
+                    dataKey="data" 
+                    stroke="#64748b" 
+                    tick={{ fontSize: 12 }} 
+                    tickFormatter={(val) => formatDateBR(val)} 
+                    minTickGap={30} 
+                  />
+                  
+                  {/* FORMATAÇÃO DO EIXO Y (Moeda BR) */}
+                  <YAxis 
+                    domain={['auto', 'auto']} 
+                    stroke="#64748b" 
+                    tick={{ fontSize: 12 }} 
+                    tickFormatter={(val) => formatBRL(val)} 
+                  />
+                  
+                  {/* TOOLTIP COM FORMATAÇÕES PRECISAS */}
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc', borderRadius: '8px' }} 
+                    labelFormatter={(label) => `Data: ${formatDateBR(label as string)}`} 
+                    // Alteração aqui: tipamos como 'any' para satisfazer o Recharts e forçamos Number() para satisfazer nosso utilitário
+                    formatter={(value: any, name: any) => [formatBRL(Number(value)), String(name)]}
+                  />
+                  
                   <Legend verticalAlign="top" height={36} />
                   <Line type="monotone" dataKey="fechamento" stroke="#3b82f6" strokeWidth={2} dot={false} name="Preço" />
-                  <Line type="monotone" dataKey={`ema_${janelaEma}`} stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 5" name={`EMA (${janelaEma})`} />
+                  <Line type="monotone" dataKey="ema" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 5" name={`EMA (${janelaEma})`} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -218,31 +275,32 @@ export default function DashboardMacro({ dataInicio, dataFim }: DashboardMacroPr
         </div>
       </div>
 
-      {/* Módulo de Inteligência Artificial */}
+      {/* Módulo de IA Cacheado */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <BrainCircuit className="w-6 h-6 text-purple-400" />
-            <h2 className="text-lg font-bold text-white">Síntese Qualitativa (Gemini)</h2>
+            <h2 className="text-lg font-bold text-white">Síntese Qualitativa do {ativoSelecionado} (Gemini)</h2>
           </div>
-          <button onClick={() => fetchIA()} disabled={iaLoading} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer">
-            {iaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gerar Análise do Ativo'}
+          <button 
+            onClick={() => fetchIA()} 
+            disabled={iaLoading} 
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer"
+          >
+            {iaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gerar Análise'}
           </button>
         </div>
         <div className="bg-slate-950 rounded-lg p-5 border border-slate-800 min-h-[120px]">
           {iaLoading ? (
-             <p className="text-slate-400">Processando cruzamento de dados com eventos recentes do mercado...</p>
-        ) : iaData ? (
+             <p className="text-slate-400">Processando cruzamento de dados...</p>
+          ) : iaData ? (
             <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed">
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-              >
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                 {iaData}
               </ReactMarkdown>
             </div>
-        ) : (
-            <p className="text-slate-500 italic text-sm">Clique no botão para cruzar a matemática do ativo com notícias em tempo real.</p>
+          ) : (
+            <p className="text-slate-500 italic text-sm">Clique no botão para cruzar a matemática do ativo com o contexto qualitativo.</p>
           )}
         </div>
       </div>

@@ -1,4 +1,3 @@
-# backend/api/routers/dashboard.py
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, List, Optional
@@ -12,17 +11,19 @@ from fin_dashboard.services.analytics import IndicadoresAnaliticos
 from fin_dashboard.services.ml import executar_pipeline_kmeans
 from fin_dashboard.services.macro_eco import MacroeconomiaAPI
 from fin_dashboard.services.llm import AnalistaQualitativo
-from fin_dashboard.services.macro_eco import MacroeconomiaAPI
-
+from fin_dashboard.schemas.market import (
+    APIResponse,
+    Resumo, Series, MLClusteringResult, 
+    KPIsMAcro, AnaliseQualitativa
+)
 
 
 router = APIRouter(
     prefix="/dashboard-ativos", 
     tags=['Analytics & Dashboard']
 )
-@router.get("/resumo")
+@router.get("/resumo", response_model=APIResponse[Resumo])
 async def resumo_mercado(
-    # 'examples' no plural com uma lista para alinhar com o Pydantic V2
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
     session: AsyncSession = Depends(get_db)
@@ -48,7 +49,7 @@ async def resumo_mercado(
         raise HTTPException(status_code=500, detail="Erro interno no processamento macro dos ativos.")
 
 
-@router.get("/series")
+@router.get("/series", response_model=APIResponse[Series])
 async def serie_temporal_ativos(
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
@@ -82,7 +83,7 @@ async def serie_temporal_ativos(
         raise HTTPException(status_code=500, detail="Erro interno no cálculo quantitativo da série temporal.")
     
 
-@router.get("/kpis-macro")
+@router.get("/kpis-macro", response_model=APIResponse[KPIsMAcro])
 async def kpis_macroeconomicos() -> Dict[str, Any]:
     """
     ALIMENTA OS DADOS MACROECONOMICOS:
@@ -96,7 +97,7 @@ async def kpis_macroeconomicos() -> Dict[str, Any]:
         logger.error(f"Erro no endpoint dos KPIs macroeconomicos")
         raise HTTPException(status_code=500, detail="Falha de comunicação com o Banco Central")
 
-@router.get("/machine-learning")
+@router.get("/machine-learning", response_model=MLClusteringResult)
 async def analise_avancada_ml(
     request: Request,
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
@@ -138,7 +139,7 @@ async def analise_avancada_ml(
         raise HTTPException(status_code=500, detail="Falha no modelo de Machine Learning.")
     
 
-@router.get("/analise-qualitativa")
+@router.get("/analise-qualitativa", response_model=AnaliseQualitativa)
 async def analise_qualitativa_ia(
     dt_inicio: str = Query(..., description="Data inicial YYYY-MM-DD", examples=["2026-07-01"]),
     dt_fim: str = Query(..., description="Data final YYYY-MM-DD", examples=[date.today()]),
@@ -147,7 +148,7 @@ async def analise_qualitativa_ia(
 ) -> Dict[str, str]:
     """
     Retorna um texto (Markdown) gerado por IA (Gemini) explicando os motivos 
-    sociológicos e macroeconômicos por trás dos números do período.
+    macroeconômicos por trás dos números do período.
     """
     try:
         lista_ativos = ativos if ativos else IndicadoresAnaliticos.ATIVOS_B3

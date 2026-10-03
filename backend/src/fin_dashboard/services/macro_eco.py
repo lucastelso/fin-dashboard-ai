@@ -46,6 +46,9 @@ class MacroeconomiaAPI:
         ipca = await cls._fetch_serie(cls.SERIES["ipca_12m"])
 
         return {
-            "selic": selic,
-            "ipca": ipca
+            'status':'sucesso',
+            'dados':{
+                "selic": selic,
+                "ipca": ipca
+                }
         }
