@@ -2,11 +2,9 @@ import asyncio
 import sys
 import polars as pl
 
-sys.path.append("src")
-
-from core.database import AsyncSessionLocal
-from core.logger import logger 
-from core.repository import BaseMarketRepository
+from fin_dashboard.core.database import AsyncSessionLocal
+from fin_dashboard.core.logger import logger 
+from fin_dashboard.core.repository import BaseMarketRepository
 
 class TesteFetchBD(BaseMarketRepository):
     """Classe para testar as query assincronas no banco de dados"""

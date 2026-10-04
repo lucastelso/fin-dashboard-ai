@@ -1,19 +1,8 @@
-import sys
 import os
-from pathlib import Path
-
-# Encontra a raiz do projeto dinamicamente a partir do arquivo de teste
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-sys.path.append(str(BASE_DIR / "backend"))
-
-
-# Importa a biblioteca para carregar variáveis de ambiente locais
 from dotenv import load_dotenv
-# Aponta rigorosamente para o arquivo .env localizado na raiz do projeto
-load_dotenv(dotenv_path=BASE_DIR / ".env")
+from fin_dashboard.services.llm import AnalistaQualitativo
 
-from services.llm import AnalistaQualitativo
+load_dotenv("../.env")
 
 def testar_gemini():
     print("Iniciando teste do Analista Qualitativo (Gemini + Grounding)...")
@@ -43,7 +32,7 @@ def testar_gemini():
     try:
         resultado = ia.gerar_sintese(dt_inicio, dt_fim, dados_quant, kpis_macro, ativos) # type: ignore
         print("\n" + "="*50)
-        print("🤖 RESPOSTA DA IA COM GROUNDING:")
+        print("RESPOSTA DA IA COM GROUNDING:")
         print("="*50)
         print(resultado)
         print("="*50 + "\n")
