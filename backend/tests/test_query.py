@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import polars as pl
 
 from fin_dashboard.core.database import AsyncSessionLocal
