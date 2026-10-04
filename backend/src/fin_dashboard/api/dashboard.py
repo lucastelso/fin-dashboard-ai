@@ -92,10 +92,10 @@ async def kpis_macroeconomicos() -> Dict[str, Any]:
     try:
         dados = await MacroeconomiaAPI.get_kpis_gerais()
         return dados
-    
     except Exception as e:
-        logger.error(f"Erro no endpoint dos KPIs macroeconomicos")
-        raise HTTPException(status_code=500, detail="Falha de comunicação com o Banco Central")
+        logger.error(f"Erro no endpoint dos KPIs macroeconomicos: {e}")
+        # Em vez de estourar erro 500 e quebrar a UI, retorna zeros de fallback
+        return {"selic": 0.0, "ipca": 0.0}
 
 @router.get("/machine-learning", response_model=MLClusteringResult)
 async def analise_avancada_ml(
