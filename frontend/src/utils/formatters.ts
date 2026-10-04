@@ -27,11 +27,25 @@ export const formatDateBR = (dateString: string | undefined | null): string => {
   }).format(d);
 };
 
+// Para o Tooltip (Data e Hora completas)
 export const formatDateTimeBR = (dateString: string | undefined | null): string => {
   if (!dateString) return '--/--/---- --:--';
   const d = new Date(dateString);
   return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric',
+    hour: '2-digit', 
+    minute: '2-digit'
+  }).format(d);
+};
+
+// Para o Eixo X (Oculta o ano para ganhar espaço de tela e evitar sobreposição)
+export const formatXAxisBR = (dateString: string | undefined | null): string => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit'
   }).format(d);
 };

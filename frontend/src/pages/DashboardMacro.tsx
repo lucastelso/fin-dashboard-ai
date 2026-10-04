@@ -10,7 +10,7 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
 // Importa os utilitários criados
-import { formatBRL, formatPercent, formatDateBR } from '../utils/formatters';
+import { formatBRL, formatPercent, formatDateTimeBR } from '../utils/formatters';
 
 const DICIONARIO_ATIVOS: Record<string, string> = {
   "PETR4.SA": "Petrobras PN", "PETR3.SA": "Petrobras ON", "VALE3.SA": "Vale ON",
@@ -240,13 +240,13 @@ export default function DashboardMacro({ dataInicio, dataFim }: { dataInicio: st
                 <LineChart data={serieData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   
-                  {/* FORMATAÇÃO DO EIXO X (Data BR) */}
+                  {/* FORMATAÇÃO DO EIXO X (Com Ano e Hora) */}
                   <XAxis 
                     dataKey="data" 
                     stroke="#64748b" 
-                    tick={{ fontSize: 12 }} 
-                    tickFormatter={(val) => formatDateBR(val)} 
-                    minTickGap={30} 
+                    tick={{ fontSize: 11 }} 
+                    tickFormatter={(val) => formatDateTimeBR(val)} 
+                    minTickGap={40} 
                   />
                   
                   {/* FORMATAÇÃO DO EIXO Y (Moeda BR) */}
@@ -257,11 +257,10 @@ export default function DashboardMacro({ dataInicio, dataFim }: { dataInicio: st
                     tickFormatter={(val) => formatBRL(val)} 
                   />
                   
-                  {/* TOOLTIP COM FORMATAÇÕES PRECISAS */}
+                  {/* TOOLTIP BLINDADO E TIPADO CORRETAMENTE */}
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc', borderRadius: '8px' }} 
-                    labelFormatter={(label) => `Data: ${formatDateBR(label as string)}`} 
-                    // Alteração aqui: tipamos como 'any' para satisfazer o Recharts e forçamos Number() para satisfazer nosso utilitário
+                    labelFormatter={(label) => `Data: ${formatDateTimeBR(label as string)}`} 
                     formatter={(value: any, name: any) => [formatBRL(Number(value)), String(name)]}
                   />
                   
